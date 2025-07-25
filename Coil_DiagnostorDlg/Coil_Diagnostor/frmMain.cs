@@ -9,9 +9,6 @@ using System.Windows.Forms;
 using System.Threading;
 using Coil_Diagnostor.Function;
 
-// Multimedia Timer
-using Multimedia;
-
 namespace Coil_Diagnostor
 {
 	public partial class frmMain : Form
@@ -19,7 +16,7 @@ namespace Coil_Diagnostor
         public Function.FunctionMeasureProcess m_MeasureProcess = new Function.FunctionMeasureProcess();
         public frmMessageBox frmMB = new frmMessageBox();
 
-        public Multimedia.Timer mmTimer = new Multimedia.Timer();
+        public MultimediaTimer mmTimer = new MultimediaTimer();
         public bool boolPinOnOff = false;
         public string strDAQPinMap = "";
 

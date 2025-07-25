@@ -1,18 +1,54 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\",
+  "WorkspaceRootPath": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|f:\\\uC18C\uC2A4\uCF54\uB4DC\\coildiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\coil_diagnostordlg\\coil_diagnostor\\frmaccessdbreader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmaccessdbreader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\coil_diagnostor\\function\\functiondatacontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\function\\multimediatimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\function\\multimediatimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|f:\\yeongho_github\\coil\\coil_diagnostordlg\\coil_diagnostor\\function\\functiondatacontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\function\\functiondatacontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|f:\\\uC18C\uC2A4\uCF54\uB4DC\\coildiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\coil_diagnostordlg\\coil_diagnostor\\frmconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\function\\functionini.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\function\\functionini.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\device\\classlcrmeter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\device\\classlcrmeter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmdrpireport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmdrpireport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmrcsdiagnosis.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmrcsdiagnosis.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmselftest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmselftest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\device\\classanalogdaq.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\device\\classanalogdaq.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\coil_diagnostor\\frmaccessdbreader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmaccessdbreader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,7 +58,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,42 +74,150 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "frmAccessDBReader.cs",
-              "DocumentMoniker": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmAccessDBReader.cs",
-              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmAccessDBReader.cs",
-              "ToolTip": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmAccessDBReader.cs",
-              "RelativeToolTip": "Coil_Diagnostor\\frmAccessDBReader.cs",
-              "ViewState": "AgIAAFYEAAAAAAAAAAAowG4FAAApAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "ClassLCRMeter.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Device\\ClassLCRMeter.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\Device\\ClassLCRMeter.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Device\\ClassLCRMeter.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\Device\\ClassLCRMeter.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T05:04:21.603Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-25T07:29:55.411Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "frmConfiguration.cs",
-              "DocumentMoniker": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmConfiguration.cs",
-              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmConfiguration.cs",
-              "ToolTip": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmConfiguration.cs",
-              "RelativeToolTip": "Coil_Diagnostor\\frmConfiguration.cs",
-              "ViewState": "AgIAAMAFAAAAAAAAAAAswNYFAAA6AAAAAAAAAA==",
+              "DocumentIndex": 6,
+              "Title": "frmDRPIReport.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmDRPIReport.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmDRPIReport.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmDRPIReport.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmDRPIReport.cs",
+              "ViewState": "AgIAABEAAAAAAAAAAAAkwDgAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T04:11:27.138Z",
+              "WhenOpened": "2025-07-25T06:58:29.127Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "frmRCSDiagnosis.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmRCSDiagnosis.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmRCSDiagnosis.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmRCSDiagnosis.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmRCSDiagnosis.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAP0GAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T06:48:01.225Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "frmMain.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmMain.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmMain.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmMain.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmMain.cs",
+              "ViewState": "AgIAAB0BAAAAAAAAAADwv4QBAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T06:47:20.133Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "frmMain.cs [\uB514\uC790\uC778]",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmMain.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmMain.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmMain.cs [\uB514\uC790\uC778]",
+              "RelativeToolTip": "Coil_Diagnostor\\frmMain.cs [\uB514\uC790\uC778]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T06:47:14.478Z",
+              "EditorCaption": " [\uB514\uC790\uC778]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "frmSelfTest.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmSelfTest.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmSelfTest.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmSelfTest.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmSelfTest.cs",
+              "ViewState": "AgIAACsBAAAAAAAAAAAswEsBAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T06:44:46.177Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "ClassAnalogDAQ.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Device\\ClassAnalogDAQ.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\Device\\ClassAnalogDAQ.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Device\\ClassAnalogDAQ.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\Device\\ClassAnalogDAQ.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T06:36:12.198Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "FunctionDataControl.cs",
-              "DocumentMoniker": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionDataControl.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionDataControl.cs",
               "RelativeDocumentMoniker": "Coil_Diagnostor\\Function\\FunctionDataControl.cs",
-              "ToolTip": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionDataControl.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionDataControl.cs",
               "RelativeToolTip": "Coil_Diagnostor\\Function\\FunctionDataControl.cs",
-              "ViewState": "AgIAAPcQAAAAAAAAAAAYwAwRAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-04-11T03:05:57.829Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MultimediaTimer.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\MultimediaTimer.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\Function\\MultimediaTimer.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\MultimediaTimer.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\Function\\MultimediaTimer.cs",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAgwA4AAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T08:15:46.368Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "FunctionIni.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionIni.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\Function\\FunctionIni.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionIni.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\Function\\FunctionIni.cs",
+              "ViewState": "AgIAAFMAAAAAAAAAAAAuwGkAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-25T08:20:24.373Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "frmAccessDBReader.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmAccessDBReader.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmAccessDBReader.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmAccessDBReader.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmAccessDBReader.cs",
+              "ViewState": "AgIAABkEAAAAAAAAAAAowDIEAAA/AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-23T05:04:21.603Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "frmConfiguration.cs",
+              "DocumentMoniker": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmConfiguration.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmConfiguration.cs",
+              "ToolTip": "F:\\Yeongho_GitHub\\Coil\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmConfiguration.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-23T04:11:27.138Z"
             }
           ]
         }

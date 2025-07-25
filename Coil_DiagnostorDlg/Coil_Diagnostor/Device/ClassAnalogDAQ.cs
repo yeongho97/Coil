@@ -1,8 +1,7 @@
-﻿using System;
+﻿using NationalInstruments.DAQmx;
+using System;
 using System.Data;
-using System.IO;
 using System.Windows.Forms;
-using NationalInstruments.DAQmx;
 
 namespace Coil_Diagnostor.Device
 {

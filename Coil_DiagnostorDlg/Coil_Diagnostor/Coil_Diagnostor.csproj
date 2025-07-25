@@ -45,9 +45,6 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>..\..\Coil_Diagnostor\Microsoft.Office.Interop.Excel.dll</HintPath>
     </Reference>
-    <Reference Include="Multimedia">
-      <HintPath>..\..\Coil_Diagnostor\Multimedia.dll</HintPath>
-    </Reference>
     <Reference Include="NationalInstruments.Common, Version=19.1.40.49152, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Coil_Diagnostor\NationalInstruments.Common.dll</HintPath>
@@ -200,6 +197,7 @@
     <Compile Include="Function\FunctionIni.cs" />
     <Compile Include="Function\FunctionMeasureProcess.cs" />
     <Compile Include="Function\FunctionSyncTask.cs" />
+    <Compile Include="Function\MultimediaTimer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="frmMainChanged.cs">
@@ -217,6 +215,7 @@
     </Compile>
     <EmbeddedResource Include="frmAccessDBReader.resx">
       <DependentUpon>frmAccessDBReader.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="frmConfiguration.resx">
       <DependentUpon>frmConfiguration.cs</DependentUpon>
