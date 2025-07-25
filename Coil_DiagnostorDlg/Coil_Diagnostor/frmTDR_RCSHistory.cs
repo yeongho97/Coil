@@ -1,0 +1,1084 @@
+﻿using System;
+using System.Data;
+using System.Drawing;
+using System.Windows.Forms;
+using System.IO;
+
+// Excel Export 용
+using Excel = Microsoft.Office.Interop.Excel;
+using Coil_Diagnostor.Function;
+using Coil_Diagnostor.UserControl;
+
+namespace Coil_Diagnostor
+{
+    public partial class frmTDR_RCSHistory : Form
+    {
+        protected Function.FunctionDataControl m_db = new Function.FunctionDataControl();
+        protected Function.FunctionChart m_Chart = new Function.FunctionChart();
+        protected frmMessageBox frmMB = new frmMessageBox();
+        protected string strPlantName = "";
+        protected bool boolFormLoad = false;
+        protected string strStartupPath = "";
+        //protected DataTable dtGraph;
+
+        protected CheckBox allCheck = new CheckBox();
+        protected bool isCheck = true;
+
+        private frmTDRChart frmTDRChart = new frmTDRChart();
+        
+        public frmTDR_RCSHistory()
+        {
+            CheckForIllegalCrossThreadCalls = false;
+            InitializeComponent();
+        }
+
+        /// <summary>
+        /// 폼 단축키 지정
+        /// </summary>
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
+        {
+            Keys key = keyData & ~(Keys.Shift | Keys.Control);
+
+            switch (key)
+            {
+                case Keys.F2: // 조회 버튼
+                    btnSearch.PerformClick();
+                    break;
+                case Keys.F3: // 보고서 생성 버튼
+                    btnReport.PerformClick();
+                    break;
+                case Keys.F4: // 폴더바로가기 버튼
+                    btnFolderMove.PerformClick();
+                    break;
+                case Keys.F12: // 닫기 버튼
+                    btnClose.PerformClick();
+                    break;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        /// <summary>
+        /// Form Load
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void frmTDR_RCSHistory_Load(object sender, EventArgs e)
+        {
+            strPlantName = Gini.GetValue("Device", "PlantName").Trim();
+            strStartupPath = Application.StartupPath.Trim();
+
+            // ComboBox 데이터 설정
+            SetComboBoxDataBinding();
+
+            // 그리드 초기 설정
+            SetDataGridViewInitialize();
+
+            // 차트 패널 생성
+            splitContainer2.Panel2.Controls.Add(frmTDRChart);
+            frmTDRChart.Show();
+            /*
+            int intMinOhDegree = 1;
+
+            if (cboHogi.SelectedItem != null)
+            {
+                intMinOhDegree = m_db.GetRCSDiagnosisHeaderMinOhDegreeInfo(strPlantName.Trim(), cboHogi.SelectedItem.ToString().Trim());
+                teOhDegreeF.Text = intMinOhDegree.ToString();
+                teOhDegreeT.Text = "";
+            }
+            else
+            {
+                teOhDegreeF.Text = "1";
+                teOhDegreeT.Text = "";
+            }
+             * */
+
+            teOhDegreeF.Text = Gini.GetValue("RCS", "SelectRCS_TDROHDegree").Trim();
+        }
+
+        /// <summary>
+        /// ComboBox 데이터 설정
+        /// </summary>
+        private void SetComboBoxDataBinding()
+        {
+            // 발전소 호기
+            string[] strHogi = Gini.GetValue("Combo", "HogiData").Split(',');
+
+            cboHogi.Items.Clear();
+
+            for (int i = 0; i < strHogi.Length; i++)
+            {
+                cboHogi.Items.Add(strHogi[i].Trim());
+            }
+
+            // 호기 선택
+            if (Gini.GetValue("RCS", "SelectRCS_TDRHogi").Trim() == "")
+            {
+                // 최초 실행 시 기본 호기 선택
+                cboHogi.SelectedIndex = 0;
+            }
+            else
+            {
+                // 직전 실행 시 기본 호기 선택
+                cboHogi.SelectedItem = Gini.GetValue("RCS", "SelectRCS_TDRHogi").Trim();
+            }
+
+            // 코일명
+            string[] strCoilNameItem = Gini.GetValue("RCS", "RCSCoilName_Item").Split(',');
+
+            cboCoilName.Items.Clear();
+
+            cboCoilName.Items.Add("전체");
+
+            for (int i = 0; i < strCoilNameItem.Length; i++)
+            {
+                cboCoilName.Items.Add(strCoilNameItem[i].Trim());
+            }
+
+            cboCoilName.SelectedIndex = 0;
+
+            // 전력합
+            string[] strMeasurementGroup_Item = Gini.GetValue("RCS", "RCSMeasurementGroup_Item").Split(',');
+
+            cboPowerCabinet.Items.Clear();
+
+            cboPowerCabinet.Items.Add("전체");
+
+            for (int i = 0; i < strMeasurementGroup_Item.Length; i++)
+            {
+                cboPowerCabinet.Items.Add(strMeasurementGroup_Item[i].Trim());
+            }
+
+            cboPowerCabinet.SelectedIndex = 0;
+        }
+
+        /// <summary>
+        /// 그리드 초기 설정
+        /// </summary>
+        private void SetDataGridViewInitialize()
+        {
+            try
+            {
+                //----- DataGridView Column 추가
+                DataGridViewCheckBoxColumn chkcolumn = new DataGridViewCheckBoxColumn();
+                DataGridViewTextBoxColumn Column1 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column2 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column3 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column4 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column5 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column6 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column7 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column8 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column9 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column10 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column11 = new DataGridViewTextBoxColumn();
+
+                chkcolumn.HeaderText = "";
+                chkcolumn.Name = "Select";
+                chkcolumn.Width = 35;
+                chkcolumn.ReadOnly = false;
+                chkcolumn.Visible = true;
+                chkcolumn.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                chkcolumn.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column1.HeaderText = "제어봉";
+                Column1.Name = "ControlRodName";
+                Column1.Width = 100;
+                Column1.ReadOnly = true;
+                Column1.Visible = true;
+                Column1.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column1.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column2.HeaderText = "코일명";
+                Column2.Name = "CoilName";
+                Column2.Width = 100;
+                Column2.ReadOnly = true;
+                Column2.Visible = true;
+                Column2.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column2.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column3.HeaderText = "측정일시";
+                Column3.Name = "Measurement_StartDate";
+                Column3.Width = 165;
+                Column3.ReadOnly = true;
+                Column3.Visible = true;
+                Column3.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column3.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column4.HeaderText = "종료일시";
+                Column4.Name = "Measurement_EndDate";
+                Column4.Width = 165;
+                Column4.ReadOnly = true;
+                Column4.Visible = false;
+                Column4.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column4.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column5.HeaderText = "발전소";
+                Column5.Name = "PlantName";
+                Column5.Width = 80;
+                Column5.ReadOnly = true;
+                Column5.Visible = false;
+                Column5.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column5.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column6.HeaderText = "호기";
+                Column6.Name = "Hogi";
+                Column6.Width = 80;
+                Column6.ReadOnly = true;
+                Column6.Visible = false;
+                Column6.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column6.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column7.HeaderText = "OH 차수";
+                Column7.Name = "Oh_Degree";
+                Column7.Width = 80;
+                Column7.ReadOnly = true;
+                Column7.Visible = false;
+                Column7.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column7.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column8.HeaderText = "전력함";
+                Column8.Name = "PowerCabinet";
+                Column8.Width = 80;
+                Column8.ReadOnly = true;
+                Column8.Visible = false;
+                Column8.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column8.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column9.HeaderText = "파일명";
+                Column9.Name = "ImageDataPathFileName";
+                Column9.Width = 80;
+                Column9.ReadOnly = true;
+                Column9.Visible = false;
+                Column9.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column9.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column10.HeaderText = "파일명";
+                Column10.Name = "TextDataPathFileName";
+                Column10.Width = 80;
+                Column10.ReadOnly = true;
+                Column10.Visible = false;
+                Column10.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column10.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column11.HeaderText = "점검결과";
+                Column11.Name = "Result";
+                Column11.Width = 80;
+                Column11.ReadOnly = true;
+                Column11.Visible = false;
+                Column11.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column11.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                dgvMeasurement.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { chkcolumn, Column1, Column2, Column3, Column4, Column5
+                    , Column6, Column7, Column8,Column9, Column10, Column11 });
+
+                dgvMeasurement.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+                dgvMeasurement.ColumnHeadersHeight = 40;
+                dgvMeasurement.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                dgvMeasurement.RowHeadersWidth = 40;
+
+                // DataGridView 기타 세팅
+                dgvMeasurement.AllowUserToAddRows = false; // Row 추가 기능 미사용
+                dgvMeasurement.AllowUserToDeleteRows = false; // Row 삭제 기능 미사용
+
+                // CheckBox 세팅
+                allCheck.Name = "allCheck";
+                allCheck.CheckedChanged += new EventHandler(AllCheckClick);
+                allCheck.Size = new Size(13, 13);
+                allCheck.Location = new Point(((dgvMeasurement.Columns[0].Width / 2) - (allCheck.Width / 2)), (dgvMeasurement.ColumnHeadersHeight / 2) - (allCheck.Height / 2));
+                dgvMeasurement.Controls.Add(allCheck); // DataGridView에 CheckBox 추가( 헤더용 )
+                allCheck.Checked = false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// DataGridView의 모든 CheckBoxCell Checked값 적용
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void AllCheckClick(object sender, EventArgs e)
+        {
+            if (isCheck)
+            {
+                if (allCheck.Checked)
+                    for (int i = 0; i < dgvMeasurement.Rows.Count; i++)
+                        dgvMeasurement.Rows[i].Cells[0].Value = true;
+                else
+                    for (int i = 0; i < dgvMeasurement.Rows.Count; i++)
+                        dgvMeasurement.Rows[i].Cells[0].Value = false;
+
+                dgvMeasurement.EndEdit(DataGridViewDataErrorContexts.Commit); // << 이거 안할경우 선택된 Cell이 CheckBoxCell일 경우 변화가 없는것처럼 보임
+            }
+        }
+
+        /// <summary>
+        /// 그리드와 그래프 초기화
+        /// </summary>
+        private void SetDataGridViewAndGraphInitialize()
+        {
+            // 그리드 초기화
+            dgvMeasurement.Rows.Clear();
+
+            // 이미지 초기화
+            pbTDRImage.Image = null;
+
+            // 차트 초기화
+            frmTDRChart.ClearChartData();
+        }
+
+        /// <summary>
+        /// 호기 Selected Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboHogi_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // 그리드와 그래프 초기화
+            SetDataGridViewAndGraphInitialize();
+        }
+
+        /// <summary>
+        /// 차수 Text Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void teOhDegreeF_TextChanged(object sender, EventArgs e)
+        {
+            // 그리드와 그래프 초기화
+            SetDataGridViewAndGraphInitialize();
+        }
+
+        /// <summary>
+        /// 제어봉 Selected Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboControlRodName_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // 그리드와 그래프 초기화
+            SetDataGridViewAndGraphInitialize();
+        }
+
+        /// <summary>
+        /// 코일명 Selected Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboCoilName_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // 그리드와 그래프 초기화
+            SetDataGridViewAndGraphInitialize();
+        }
+
+        /// <summary>
+        /// 전력합 Selected Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboPowerCabinet_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                // 그리드와 그래프 초기화
+                SetDataGridViewAndGraphInitialize();
+
+                string strRCSPowerCabinetItem = "";
+
+                if(cboPowerCabinet.SelectedItem != null)
+                {
+                    strRCSPowerCabinetItem = Gini.GetValue("RCS", $"RCSPowerCabinetItem_{cboPowerCabinet.SelectedItem.ToString().Trim()}").Trim();
+                }
+                else
+                {
+                    string[] strMeasurementGroup_Item = Gini.GetValue("RCS", "RCSMeasurementGroup_Item").Split(',');
+                    foreach (string cabinet in strMeasurementGroup_Item)
+                    {
+                        if (strRCSPowerCabinetItem.Length == 0)
+                        {
+                            strRCSPowerCabinetItem = Gini.GetValue("RCS", $"RCSPowerCabinetItem_{cabinet}").Trim();
+                        }
+                        else
+                        {
+                            strRCSPowerCabinetItem = strRCSPowerCabinetItem + "," + Gini.GetValue("RCS", $"RCSPowerCabinetItem_{cabinet}").Trim();
+                        }
+                    }
+                }
+
+                string[] arrayRCSPowerCabinetItem = strRCSPowerCabinetItem.Split(',');
+
+                // 제어봉
+                cboControlRodName.Items.Clear();
+
+                cboControlRodName.Items.Add("전체");
+
+                for (int i = 0; i < arrayRCSPowerCabinetItem.Length; i++)
+                {
+                    if (arrayRCSPowerCabinetItem[i].Trim() != "N/A")
+                        cboControlRodName.Items.Add(arrayRCSPowerCabinetItem[i].Trim());
+                }
+
+                cboControlRodName.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 닫기 Button Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        /// <summary>
+        /// 폴더바로가기 Button Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnFolderMove_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string strPath = Application.StartupPath + @"\Report";
+                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(strPath);
+
+                if (!di.Exists)
+                {
+                    di.Create();
+                }
+
+                System.Diagnostics.Process.Start(strPath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 조회 Button Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Cursor.Current = Cursors.WaitCursor;
+
+            try
+            {
+                // 그리드와 그래프 초기화
+                SetDataGridViewAndGraphInitialize();
+
+                // 측정대상(호기) 
+                if (cboHogi.SelectedItem == null)
+                {
+                    frmMB.lblMessage.Text = "측정대상(호기)이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+
+                // 차수
+                if (teOhDegreeF.Text.Trim() == "" && teOhDegreeT.Text.Trim() == "")
+                {
+                    frmMB.lblMessage.Text = "차수를 입력하십시오.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+
+                string strHogi = "", strOhDegreeF = "", strOhDegreeT = "", strPowerCabinet = "", strControlRodName = "", strCoilName = "";
+
+                // 측정대상(호기) 
+                strHogi = cboHogi.SelectedItem.ToString().Trim();
+
+                // 차수
+                if (teOhDegreeF.Text.Trim() == "" && teOhDegreeT.Text.Trim() != "")
+                    strOhDegreeF = "제 " + teOhDegreeT.Text.Trim() + " 차";
+                else if (teOhDegreeF.Text.Trim() != "" && teOhDegreeT.Text.Trim() == "")
+                    strOhDegreeF = "제 " + teOhDegreeF.Text.Trim() + " 차";
+                else
+                {
+                    strOhDegreeF = "제 " + teOhDegreeF.Text.Trim() + " 차";
+                    strOhDegreeT = "제 " + teOhDegreeT.Text.Trim() + " 차";
+                }
+
+                // 전력함
+                if (cboPowerCabinet.SelectedItem != null)
+                    strPowerCabinet = cboPowerCabinet.SelectedItem.ToString().Trim();
+
+                // 제어봉
+                if (cboControlRodName.SelectedItem != null)
+                    strControlRodName = cboControlRodName.SelectedItem.ToString().Trim();
+
+                // 코일
+                if (cboCoilName.SelectedItem != null)
+                    strCoilName = cboCoilName.SelectedItem.ToString().Trim();
+
+                DataTable dt = new DataTable();
+                dt = m_db.GetTDRRCSDiagnosisDataGridViewDataInfo(strPlantName, strHogi, strOhDegreeF, strOhDegreeT, strPowerCabinet, strControlRodName, strCoilName);
+
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        int intRow = dgvMeasurement.Rows.Add();
+
+                        dgvMeasurement.Rows[intRow].Cells["Select"].Value = false;
+
+                        dgvMeasurement.Rows[intRow].Cells["ControlRodName"].Value = dt.Rows[i]["ControlRodName"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["CoilName"].Value = dt.Rows[i]["CoilName"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["Measurement_StartDate"].Value = dt.Rows[i]["Measurement_StartDate"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["Measurement_EndDate"].Value = dt.Rows[i]["Measurement_EndDate"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["PlantName"].Value = dt.Rows[i]["PlantName"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["Hogi"].Value = dt.Rows[i]["Hogi"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["Oh_Degree"].Value = dt.Rows[i]["Oh_Degree"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["PowerCabinet"].Value = dt.Rows[i]["PowerCabinet"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["ImageDataPathFileName"].Value = strStartupPath.Trim() + dt.Rows[i]["ImageDataPathFileName"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["TextDataPathFileName"].Value = strStartupPath.Trim() + dt.Rows[i]["TextDataPathFileName"].ToString().Trim();
+                        dgvMeasurement.Rows[intRow].Cells["Result"].Value = "";
+                    }
+
+                    // DataGridView 첫행 선택
+                    int iSelectedRow = 0;
+                    dgvMeasurement_Click(dgvMeasurement, new DataGridViewCellEventArgs(0, iSelectedRow));
+                    
+                    frmMB.lblMessage.Text = "데이터 조회 완료";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+                else
+                {
+                    frmMB.lblMessage.Text = "데이터가 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                frmMB.lblMessage.Text = "데이터 조회 오류";
+                frmMB.TopMost = true;
+                frmMB.ShowDialog();
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+
+            System.Windows.Forms.Cursor.Current = Cursors.Default;
+        }
+
+        /// <summary>
+        /// DataGridView Cell Click Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgvMeasurement_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (((DataGridView)sender).RowCount < 1) return;
+
+            isCheck = false;
+
+            if (e.RowIndex >= 0 && e.ColumnIndex == 0)
+            {
+                ((DataGridView)sender).Rows[e.RowIndex].Cells["Select"].Value = !(bool)((DataGridView)sender).Rows[e.RowIndex].Cells["Select"].Value;
+                allCheck.Checked = true;
+
+                for (int i = 0; i < ((DataGridView)sender).Rows.Count; i++)
+                {
+                    if (!(bool)((DataGridView)sender).Rows[i].Cells["Select"].Value)
+                    {
+                        allCheck.Checked = false;
+                        break;
+                    }
+                }
+            }
+
+            isCheck = true;
+        }
+
+        /// <summary>
+        /// DataGridView Click Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgvMeasurement_Click(object sender, EventArgs e)
+        {
+            DataGridView gv = sender as DataGridView;
+            int intRowIndex = dgvMeasurement.CurrentRow.Index;
+            SetDataReader();
+            if (frmTDRChart.GetCursorDiff())
+            {
+                dgvMeasurement.Rows[intRowIndex].Cells["Result"].Value = "적합";
+                dgvMeasurement.Rows[intRowIndex].DefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+            }
+            else
+            {
+                dgvMeasurement.Rows[intRowIndex].Cells["Result"].Value = "부적합";
+                dgvMeasurement.Rows[intRowIndex].DefaultCellStyle.ForeColor = System.Drawing.Color.Red;
+            }
+        }
+
+        private void SetDataReader()
+        {
+            System.Windows.Forms.Cursor.Current = Cursors.WaitCursor;
+
+            bool boolResult = false;
+
+            try
+            {
+                // 이미지 초기화
+                pbTDRImage.Image = null;
+
+                int intRowIndex = dgvMeasurement.CurrentRow.Index;
+
+                string strImageDataPathFileName = dgvMeasurement.Rows[intRowIndex].Cells["ImageDataPathFileName"].Value == null
+                    ? "" : dgvMeasurement.Rows[intRowIndex].Cells["ImageDataPathFileName"].Value.ToString().Trim();
+
+                string strTextDataPathFileName = dgvMeasurement.Rows[intRowIndex].Cells["TextDataPathFileName"].Value == null
+                    ? "" : dgvMeasurement.Rows[intRowIndex].Cells["TextDataPathFileName"].Value.ToString().Trim();
+
+                if (strImageDataPathFileName.Trim() == "")
+                {
+                    frmMB.lblMessage.Text = "보고서 데이터 파일이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                FileInfo fi = new FileInfo(strImageDataPathFileName);
+
+                if (!fi.Exists)
+                {
+                    frmMB.lblMessage.Text = "보고서 데이터 파일이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    boolResult = false;
+                    return;
+                }
+                else
+                {
+                    openFileDialog1.FileName = strImageDataPathFileName;
+                    pbTDRImage.Image = new Bitmap(openFileDialog1.FileName);
+                    pbTDRImage.SizeMode = PictureBoxSizeMode.Zoom;
+                }
+
+                if (strTextDataPathFileName.Trim() == "")
+                {
+                    frmMB.lblMessage.Text = "보고서 데이터 파일이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                fi = new FileInfo(strTextDataPathFileName);
+
+                if (!fi.Exists)
+                {
+                    frmMB.lblMessage.Text = "보고서 데이터 파일이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    boolResult = false;
+                    return;
+                }
+
+                // Text 파일 오픈하여 데이터 읽어와 그래프에 바인딩 처리
+                boolResult = GetDataReaderAndDataGraphBinding(strTextDataPathFileName);
+
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+            dgvMeasurement.EndEdit();
+
+            System.Windows.Forms.Cursor.Current = Cursors.Default;
+        }
+
+        /// <summary>
+        /// Text 파일 오픈하여 데이터 읽어와 그래프에 바인딩 처리
+        /// </summary>
+        /// <param name="_strDataPathFileName"></param>
+        /// <returns></returns>
+        private bool GetDataReaderAndDataGraphBinding(string _strTextDataPathFileName)
+        {
+            bool boolResult = false;
+
+            DataTable dtGraph = new DataTable();
+
+            dtGraph.Columns.Add("Index");
+            dtGraph.Columns.Add("dataValue");
+
+            FileStream fs = new FileStream(_strTextDataPathFileName, FileMode.OpenOrCreate, FileAccess.Read);
+            StreamReader sr = new StreamReader(fs, System.Text.Encoding.UTF8);
+
+            sr.BaseStream.Seek(0, SeekOrigin.Begin);
+
+            string[] arrayStr;
+
+            try
+            {
+                // Text 파일에서 데이터 가져오기
+                while (sr.Peek() > -1)
+                {
+                    arrayStr = sr.ReadLine().Split('¶');
+                    string[] strDataValue = arrayStr[0].ToString().Split(',');
+
+                    DataRow dr = dtGraph.NewRow();
+
+                    dr["Index"] = strDataValue[0] == null || strDataValue[0] == "" ? "" : strDataValue[0].Trim();
+                    dr["dataValue"] = strDataValue[1] == null || strDataValue[1] == "" ? 0d : Convert.ToDouble(strDataValue[1].Trim());
+
+                    dtGraph.Rows.Add(dr);
+                }
+                
+                frmTDRChart.SetData(ref dtGraph);
+            }
+             catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+            finally
+            {
+                if (sr != null) sr.Close();
+                if (fs != null) fs.Close();
+            }
+
+            return boolResult;
+        }
+
+        /// <summary>
+        /// DataGridView ColumnDividerWidthChanged Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgvMeasurement_ColumnDividerWidthChanged(object sender, DataGridViewColumnEventArgs e)
+        {
+            CheckBoxFixed((DataGridView)sender, allCheck);
+        }
+
+        /// <summary>
+        /// DataGridView RowHeadersWidthChanged Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgvMeasurement_RowHeadersWidthChanged(object sender, EventArgs e)
+        {
+            CheckBoxFixed((DataGridView)sender, allCheck);
+        }
+
+        /// <summary>
+        /// DataGridView Scroll Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgvMeasurement_Scroll(object sender, ScrollEventArgs e)
+        {
+            CheckBoxFixed((DataGridView)sender, allCheck);
+        }
+
+        /// <summary>
+        /// 콤보박스 위치 변경함수
+        /// </summary>
+        /// <param name="dgv">데이터그리드뷰</param>
+        /// <param name="c">콤보박스</param>
+        public void CheckBoxFixed(DataGridView _dgv, Control c)
+        {
+            // 표시된 첫번째 열이 0일경우 >> 스크롤 해서 "선택" 열이 넘어가면 1로 됨
+            if (_dgv.FirstDisplayedScrollingColumnIndex == 0)
+            {
+                // 현재 스크롤 되어 보이지 않는 열의 가로 길이 >> "선택"열의 Width가 60이고 스크롤되어 "선택"열이 반만 보일경우 해당값은 30임
+                // 따라서 열의 가려진 크기가 "선택"행의 Width - CheckBox.Width - 7보다 크다면 숨김처리( 해당 처리를 안하면 CheckBox는 자동 숨기기가 안되서 공중에 붕뜬 느낌으로 남아있음 )
+                // 따라서 열의 가려진 크기가 "선택"행의 Width - CheckBox.Width - 7은 >> 60 - 13 - 7 따라서 체크박스가 숨겨진 길이에 닿는 순간임
+                if (_dgv.FirstDisplayedScrollingColumnHiddenWidth > (_dgv.Columns[0].Width - c.Width - 7))
+                    c.Visible = false;
+                // 위 내용이 아니면 다시 보이게 Visible = true 처리
+                // Point.X 계산은 RowHeadersWidth + "선택"행 Width - CheckBox.WIdth - 7 - 숨겨진행의 길이
+                // Point.Y 계산은 ( 열 높이 / 2 ) - ( CheckBox.Heiht / 2 ) >> css 에서 가운데 마추는 형식과 비슷하다고 보면 됨
+                else
+                {
+                    c.Location = new Point((_dgv.Columns[0].Width / 2) - (c.Width / 2), (_dgv.ColumnHeadersHeight / 2) - (c.Height / 2));
+                    c.Visible = true;
+                }
+            }
+            // 표시된 첫번째 열이 0보다 크면 "선택"행은 숨겨진 상태므로 숨김 처리
+            else if (_dgv.FirstDisplayedScrollingColumnIndex > 0)
+                c.Visible = false;
+        }
+
+        /// <summary>
+        /// 보고서 생성 Button Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnReport_Click(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Cursor.Current = Cursors.WaitCursor;
+
+            int intDataCount = 0;
+            string strHogi = "", strOhDegree = "", strPowerCabinet = "", strControlRodName = "", strCoilName = ""
+                , strImageDataPathFileName = "", strTextDataPathFileName = "", strResult = "", strMeasurementDate = "";
+            bool boolResult = false;
+
+            try
+            {
+                if (dgvMeasurement.RowCount < 1)
+                {
+                    frmMB.lblMessage.Text = "데이터가 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                for (int i = 0; i < dgvMeasurement.RowCount; i++)
+                {
+                    if ((bool)dgvMeasurement.Rows[i].Cells["Select"].Value)
+                    {
+                        strHogi = dgvMeasurement.Rows[i].Cells["Hogi"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["Hogi"].Value.ToString().Trim();
+
+                        strOhDegree = dgvMeasurement.Rows[i].Cells["Oh_Degree"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["Oh_Degree"].Value.ToString().Trim();
+
+                        strPowerCabinet = dgvMeasurement.Rows[i].Cells["PowerCabinet"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["PowerCabinet"].Value.ToString().Trim();
+
+                        strControlRodName = dgvMeasurement.Rows[i].Cells["ControlRodName"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["ControlRodName"].Value.ToString().Trim();
+
+                        strCoilName = dgvMeasurement.Rows[i].Cells["CoilName"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["CoilName"].Value.ToString().Trim();
+
+                        strImageDataPathFileName = dgvMeasurement.Rows[i].Cells["ImageDataPathFileName"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["ImageDataPathFileName"].Value.ToString().Trim();
+
+                        strTextDataPathFileName = dgvMeasurement.Rows[i].Cells["TextDataPathFileName"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["TextDataPathFileName"].Value.ToString().Trim();
+
+                        strMeasurementDate = dgvMeasurement.Rows[i].Cells["Measurement_StartDate"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["Measurement_StartDate"].Value.ToString().Trim();
+
+                        // Text 파일 오픈하여 데이터 읽어와 그래프에 바인딩 처리
+                        boolResult = GetDataReaderAndDataGraphBinding(strTextDataPathFileName);
+
+                        if (frmTDRChart.GetCursorDiff())
+                        {
+                            dgvMeasurement.Rows[i].Cells["Result"].Value = "적합";
+                            dgvMeasurement.Rows[i].DefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+                        }
+                        else
+                        {
+                            dgvMeasurement.Rows[i].Cells["Result"].Value = "부적합";
+                            dgvMeasurement.Rows[i].DefaultCellStyle.ForeColor = System.Drawing.Color.Red;
+                        }
+
+                        strResult = dgvMeasurement.Rows[i].Cells["Result"].Value == null
+                            ? "" : dgvMeasurement.Rows[i].Cells["Result"].Value.ToString().Trim();
+
+                        if (strImageDataPathFileName != "")
+                        {
+                            FileInfo fi = new FileInfo(strImageDataPathFileName);
+
+                            if (fi.Exists)
+                            {
+                                // 엑설 보고서 출력
+                                boolResult = ExcelReportExport(strHogi, strOhDegree, strPowerCabinet, strControlRodName, strCoilName
+                                    , strResult, strImageDataPathFileName, strMeasurementDate);
+
+                                intDataCount++;
+                            }
+                        }
+                    }
+                }
+
+                if (intDataCount > 0)
+                {
+                    frmMB.lblMessage.Text = "보고서 생성이 완료되었습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+                else
+                {
+                    frmMB.lblMessage.Text = "보고서 생성 데이터가 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+
+            System.Windows.Forms.Cursor.Current = Cursors.Default;
+        }
+
+        /// <summary>
+        /// 엑설 보고서 출력
+        /// </summary>
+        /// <param name="_strHogi"></param>
+        /// <param name="_strOhDegree"></param>
+        /// <param name="_strPowerCabinet"></param>
+        /// <param name="_strControlRodName"></param>
+        /// <param name="_strCoilName"></param>
+        /// <param name="_strResult"></param>
+        /// <param name="_strImageDataPathFileName"></param>
+        /// <returns></returns>
+        private bool ExcelReportExport(string _strHogi, string _strOhDegree, string _strPowerCabinet, string _strControlRodName, string _strCoilName
+            , string _strResult, string _strImageDataPathFileName, string _strMeasurementDate)
+        {
+            bool boolResult = false;
+
+            // 보고서 생성 전 Process에 생성된 EXCEL.EXE 목록 추출
+            System.Diagnostics.Process[] excelProcessID;
+            excelProcessID = System.Diagnostics.Process.GetProcessesByName("EXCEL");
+            System.Collections.ArrayList aryProcessID = new System.Collections.ArrayList();
+
+            for (int i = 0; i < excelProcessID.Length; i++)
+            {
+                aryProcessID.Add(excelProcessID[i].Id);
+            }
+
+            // 엑셀 클래스, 어플리케이션, 워크북, 워크시트 정의.
+            Excel.Application xlsxApp = new Excel.Application();
+            Excel.Workbook xlsxBook = null;
+            Excel.Worksheet xlsxSheet1 = null;
+            string newfileName = "";
+            string strTitle = string.Format("TDR-RCS 이력 보고서");
+            string strStartPath = Application.StartupPath;
+            
+            try
+            {
+                string fileName = strStartPath + @"\코일보고서Form_Rv2.xlsx";
+
+                DateTime nowDataTime = System.DateTime.Now;
+
+                newfileName = strStartPath + @"\Report\" + "TDR RCS 보고서_" + _strHogi + "_" + _strOhDegree + "_" + _strPowerCabinet + "_" + _strControlRodName + "_" + _strCoilName + "_(" + nowDataTime.ToString("yyyyMMddHHmmss") + ").xlsx";
+               
+                // 원본파일 존재 확인.
+                if (!System.IO.File.Exists(fileName))
+                {
+                    frmMB.lblMessage.Text = "원본 파일이 존재하지 않습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return false;
+                }
+
+                xlsxApp.Visible = false;
+                xlsxBook = xlsxApp.Workbooks.Open(fileName, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
+                xlsxSheet1 = (Excel.Worksheet)xlsxBook.Sheets.get_Item(1);
+                
+                Excel.Range oRng;
+
+                // Header Data Binding
+                oRng = xlsxSheet1.get_Range("B1", "M1"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = strTitle.Trim();
+
+                // 측정 대상
+                oRng = xlsxSheet1.get_Range("C3", "D3"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strHogi.Trim();
+
+                // 차수
+                oRng = xlsxSheet1.get_Range("F3", "G3"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strOhDegree.Trim();
+
+                // 전력합
+                oRng = xlsxSheet1.get_Range("I3", "J3"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strPowerCabinet.Trim();
+
+                // 제어봉
+                oRng = xlsxSheet1.get_Range("L3", "M3"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strControlRodName.Trim();
+
+                // 코일
+                oRng = xlsxSheet1.get_Range("C4", "D4"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strCoilName.Trim();
+
+                // 점검결과
+                oRng = xlsxSheet1.get_Range("F4", "G4"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strResult.Trim();
+
+                // 작성일
+                oRng = xlsxSheet1.get_Range("I4", "M4"); //해당 범위의 셀 획득
+                oRng.MergeCells = true; //머지
+                oRng.Value = _strMeasurementDate.Trim();
+
+                int intLeft = 4, intTop = 76, intWidth = 782, intHeight = 426;
+
+                xlsxSheet1.Shapes.AddPicture(_strImageDataPathFileName.Trim(), Microsoft.Office.Core.MsoTriState.msoFalse, Microsoft.Office.Core.MsoTriState.msoCTrue, intLeft, intTop, intWidth, intHeight); // Left, Top, Width, Height
+
+                boolResult = true;
+            }
+            catch (Exception ex)
+            {
+                frmMB.lblMessage.Text = "보고서 생성 중 오류가 발생하였습니다.";
+                frmMB.TopMost = true;
+                frmMB.ShowDialog();
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+            finally
+            {
+                xlsxBook.Close(true, newfileName, false);
+                xlsxApp.Quit();
+
+                releaseObject(xlsxApp);
+                releaseObject(xlsxSheet1);
+                releaseObject(xlsxBook);
+
+                xlsxApp = null;
+                xlsxBook = null;
+
+                // 보고서 생성 시 Process에 생성된 EXCEL.EXE을 Kill 함.
+                System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName("EXCEL");
+                for (int i = 0; i < process.Length; i++)
+                {
+                    if (!aryProcessID.Contains(process[i].Id))
+                        process[i].Kill();
+                }
+            }
+
+            return boolResult;
+        }
+
+        #region 메모리해제
+
+        private static void releaseObject(object obj)
+        {
+            try
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+                obj = null;
+            }
+            catch (Exception ex)
+            {
+                obj = null;
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+            finally
+            {
+                GC.Collect();
+            }
+        }
+
+        #endregion
+
+        private void dgvMeasurement_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Down || e.KeyCode == Keys.Up)
+            {
+                SetDataReader();
+            }
+        }
+
+    }
+}

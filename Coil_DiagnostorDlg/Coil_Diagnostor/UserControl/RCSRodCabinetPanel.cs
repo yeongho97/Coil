@@ -1,0 +1,345 @@
+﻿using Coil_Diagnostor.Function;
+using Coil_Diagnostor.Properties;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Coil_Diagnostor.UserControl
+{
+    public class RCSRodCabinetPanel : Panel
+    { 
+        private GroupBox CabinetGroupBox;
+        private GroupBox RodGroupBox;
+        private Button[] CabinetButton;
+        private Button[] RodButton;
+
+        private int MaxCabinetCount;
+        private int MaxRodColumnsCount;
+        private int RodRowsCount = 2;
+        private int MaxRodCount;
+        private int SelectedCabinet = -1;
+        private int SelectedRod;
+
+        public bool SelectedCabinetChanged { get; protected set; }
+        public bool SelectedRodChanged { get; protected set; }
+        public int LastSelectedRod { get; protected set; }
+        
+        TableLayoutPanel RodButtonLayoutPanel;
+        int digKind;
+        
+        public RCSRodCabinetPanel()
+        {
+            // no reference
+        }
+
+        public RCSRodCabinetPanel(Control control, string rodCount, int digKind)
+        {
+            this.BackColor = Color.FromArgb(255, 238, 217);         // default color
+            this.Visible = true;                                    // ?
+            this.Dock = DockStyle.Fill;        
+            this.Parent = control;
+            this.digKind = digKind;                                 // RCS : 1 / TDR_RCS : 2
+
+            SelectedCabinetChanged = false;
+            SelectedRodChanged = false;
+            SelectedRod = 0;
+            LastSelectedRod = -1;
+
+            switch (rodCount.Trim())
+            {
+                case "고리 1발전소":
+                    MaxCabinetCount = 3;                            
+                    MaxRodColumnsCount = 7;
+                    break;
+                case "한빛 1발전소": 
+                    MaxCabinetCount = 5;
+                    MaxRodColumnsCount = 6;
+                    break;
+                default:
+                    MaxCabinetCount = 5;
+                    MaxRodColumnsCount = 6;
+                    break;
+            }
+            MaxRodCount = MaxRodColumnsCount * RodRowsCount;
+            InitializeControl();
+            InitializeRodButton();
+        }
+
+        private void InitializeControl()
+        {
+            CabinetGroupBox = new GroupBox();
+            RodGroupBox = new GroupBox();
+
+            CabinetGroupBox.Dock = DockStyle.Left;
+            CabinetGroupBox.TabIndex = 0;
+            CabinetGroupBox.TabStop = false;
+            CabinetGroupBox.Text = "전력함 표시";
+
+            RodGroupBox.Dock = DockStyle.Fill;
+            RodGroupBox.TabIndex = 0;
+            RodGroupBox.TabStop = false;
+            RodGroupBox.Text = "제어봉";
+
+            this.Padding = new Padding(3, 5, 5, 3);
+
+            switch (digKind)    // RCS : 1 / TDR_RCS : 2
+            {
+                case 1: CabinetGroupBox.Dock = DockStyle.Top; CabinetGroupBox.Height = 45; break;
+                case 2: CabinetGroupBox.Dock = DockStyle.Left; CabinetGroupBox.Width = MaxCabinetCount * 105; break; 
+                default: CabinetGroupBox.Dock = DockStyle.Fill; break;
+            }
+            
+            this.Controls.Add(RodGroupBox);
+            this.Controls.Add(CabinetGroupBox);
+
+            RodButtonLayoutPanel = new TableLayoutPanel();
+            RodButtonLayoutPanel.Dock = DockStyle.Fill;
+            RodGroupBox.Controls.Add(RodButtonLayoutPanel);
+
+            string[] cabinetName = Gini.GetValue("RCS", "RCSMeasurementGroup_Item").Split(',');
+            while(cabinetName.Length < MaxCabinetCount)  
+            {
+                cabinetName.Append("undefined");
+            }
+
+            CabinetButton = new Button[MaxCabinetCount];      
+            for (int i = 0; i < MaxCabinetCount; i++)
+            {
+                CabinetButton[i] = new Button();
+                CabinetButton[i].Width = CabinetGroupBox.DisplayRectangle.Width / MaxCabinetCount;
+                CabinetButton[i].Dock = DockStyle.Left;
+                CabinetButton[i].Text = cabinetName[i].Trim();
+                CabinetButton[i].Click += CabinetButton_Click;
+                CabinetButton[i].Tag = i;
+                CabinetButton[i].Font = new Font("굴림", 9F,FontStyle.Bold, GraphicsUnit.Point, ((byte)(129)));
+                CabinetButton[i].BackgroundImage = Resources.버튼_4;
+                CabinetButton[i].BackgroundImageLayout = ImageLayout.Stretch;
+                CabinetButton[i].Margin = new Padding(0, 0, 0, 0);
+            }
+
+            for(int i = MaxCabinetCount - 1; i >= 0; i--)
+            {
+                CabinetGroupBox.Controls.Add(CabinetButton[i]);
+            }
+
+            RodButtonLayoutPanel.ColumnCount = MaxRodColumnsCount;   
+            RodButtonLayoutPanel.ColumnStyles.Clear();
+            for (int i = 0; i < RodButtonLayoutPanel.ColumnCount; i++)
+            {
+                RodButtonLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100 / RodButtonLayoutPanel.ColumnCount));
+            }
+            RodButtonLayoutPanel.RowCount = RodRowsCount;
+            RodButtonLayoutPanel.RowStyles.Clear();
+            for (int i = 0; i < RodButtonLayoutPanel.RowCount; i++)
+            {
+                RodButtonLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100 / RodButtonLayoutPanel.RowCount));
+            }
+        }
+
+        private void CabinetButton_Click(object sender, EventArgs e)
+        {
+            Button b = sender as Button;
+            int newCabinetIdx = Convert.ToInt32(b.Tag);
+            if(SelectedCabinet != Convert.ToInt32(b.Tag))
+            {
+                SetColorCabinetButton(SelectedCabinet, newCabinetIdx);
+                SelectedCabinet = newCabinetIdx;
+                ResetRodButton();
+
+                SelectedCabinetChanged = true;
+                SelectedRod = 0;
+            }
+            else
+            {
+                //return;
+            }
+
+            this.InvokeOnClick(this, e);
+            SelectedCabinetChanged = false;
+        }
+
+        private void SetColorCabinetButton(int org, int cur)
+        {
+            if (SelectedCabinet == -1)
+            {
+                for(int i = 0; i < MaxCabinetCount; i++)
+                {
+                    CabinetButton[i].ForeColor = Color.Black;
+                    CabinetButton[i].BackgroundImage = Resources.버튼_4;
+                }
+            }
+            else
+            {
+                CabinetButton[org].ForeColor = Color.Black;
+                CabinetButton[org].BackgroundImage = Resources.버튼_4;
+            }
+            CabinetButton[cur].ForeColor = Color.White;
+            CabinetButton[cur].BackgroundImage = Resources.버튼_3;
+        }
+
+        private void ResetRodButton()
+        {
+            string key = $"RCSPowerCabinetItem_{GetCabinetName()}";
+            string[] rodNames = Gini.GetValue("RCS", key).Split(',');
+
+            int rodCount = rodNames.Length;
+            for (int i = 0; i < MaxRodCount; i++)    
+            {
+                if(i < rodCount) 
+                {
+                    RodButton[i].Text = rodNames[i];
+                }
+                else
+                {
+                    RodButton[i].Text = "N/A";
+                }
+            }
+            for(int i = 0; i < MaxRodCount; i++) 
+            {
+                RodButton[i].Enabled = RodButton[i].Text.Trim() == "N/A" ? false : true;
+            }
+
+            for (int i = 0; i < MaxRodCount; i++) 
+            {
+                RodButton[i].ForeColor = Color.Black;
+                RodButton[i].BackgroundImage = Resources.버튼_4;
+            }
+        }
+
+        private void InitializeRodButton()
+        {
+            RodButton = new Button[MaxRodCount];     
+            for (int i = 0; i < MaxRodCount; i++)
+            {
+                RodButton[i] = new Button();
+                RodButton[i].Dock = DockStyle.Fill;
+                RodButton[i].Click += RodButton_Click;
+                RodButton[i].Tag = i;
+                RodButton[i].Font = new Font("굴림", 9F, FontStyle.Bold, GraphicsUnit.Point, ((byte)(129)));
+                RodButton[i].BackgroundImage = Resources.버튼_4;
+                RodButton[i].BackgroundImageLayout = ImageLayout.Stretch;
+                RodButton[i].Margin = new Padding(0, 0, 0, 0);
+            }
+            for (int i = MaxRodCount - 1; i >= 0; i--)
+            {
+                RodButtonLayoutPanel.Controls.Add(RodButton[i], i % MaxRodColumnsCount, i / MaxRodColumnsCount);
+            }
+        }
+
+        private void RodButton_Click(object sender, EventArgs e)
+        {
+            Button b = sender as Button;
+            int buttonIdx = Convert.ToInt32(b.Tag);     // todo check tdr
+
+            if (digKind == 2)
+            {
+                if(LastSelectedRod == buttonIdx)
+                {
+                    RodButton[buttonIdx].ForeColor = Color.Black;
+                    RodButton[buttonIdx].BackgroundImage = Resources.버튼_4;
+                    LastSelectedRod = -1;
+                }
+                else
+                {
+                    if (LastSelectedRod != -1)
+                    {
+                        RodButton[LastSelectedRod].ForeColor = Color.Black;
+                        RodButton[LastSelectedRod].BackgroundImage = Resources.버튼_4;
+                    }
+                    RodButton[buttonIdx].ForeColor = Color.White;
+                    RodButton[buttonIdx].BackgroundImage = Resources.버튼_3;
+                    LastSelectedRod = buttonIdx;
+                }
+            }
+            else //if (digKind == 1)
+            {
+                LastSelectedRod = buttonIdx;
+                bool isSelected = (SelectedRod & (1 << (int)(b.Tag))) != 0;
+                if (isSelected)
+                {
+                    SelectedRod = SelectedRod & ~(1 << buttonIdx);
+                }
+                else
+                {
+                    SelectedRod = SelectedRod | (1 << buttonIdx);
+                }
+                b.ForeColor = b.ForeColor == Color.Red ? Color.Red : isSelected ? Color.Black : Color.White;
+                b.BackgroundImage = isSelected ? Resources.버튼_4 : Resources.버튼_3;
+            }
+
+            SelectedRodChanged = true;
+            this.InvokeOnClick(this, e);
+            SelectedRodChanged = false;
+        }
+
+        public void SetColorRodButton(bool[] olds)
+        {
+            for(int i = 0; i < MaxRodCount; i++)  
+            {
+                bool isSelected = (SelectedRod & (1 << (int)(RodButton[i].Tag))) != 0;
+                RodButton[i].ForeColor = olds[i] ? Color.Red : isSelected ? Color.White : Color.Black; 
+            }
+        }
+        
+        public void InitializePanel()
+        {
+
+            SelectedCabinet = -1;
+            CabinetButton[0]?.PerformClick();    // todo : nullptr check
+        }
+
+        public void SetClearRodButton()
+        {
+            ResetRodButton();
+            SelectedRod = 0;
+        }
+
+        public string GetRodName()
+        {
+            string returnVal = (LastSelectedRod == -1) ? "" : RodButton[LastSelectedRod].Text.Trim();
+            return returnVal;
+        }
+
+        public List<string> GetSelectedRodName()
+        {
+            List<string> ReturnVal = new List<string>();
+            for (int i = 0; i < MaxRodCount; i++)
+            {
+                bool isSelected = (SelectedRod & (1 << i)) != 0;
+                if(isSelected)
+                {
+                    ReturnVal.Add(RodButton[i].Text);
+                }
+            }
+            return ReturnVal;
+        }
+
+        public int GetSelectedRod()
+        {
+            return SelectedRod;
+        }
+
+        public string GetCabinetName()
+        {
+            string returnVal = (SelectedCabinet == -1) ? "" : CabinetButton[SelectedCabinet].Text.Trim();
+            return returnVal;
+        }
+
+        public void TDRInitializePanel()
+        {
+            CabinetButton[0]?.PerformClick();
+            RodButton[0]?.PerformClick();
+        }
+
+        public void SetControlEnabled(bool enabled)
+        {
+            CabinetGroupBox.Enabled = enabled;
+            RodGroupBox.Enabled = enabled;
+        }
+    }
+}

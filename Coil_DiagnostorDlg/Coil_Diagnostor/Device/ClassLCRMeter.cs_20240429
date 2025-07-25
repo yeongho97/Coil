@@ -1,0 +1,314 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO.Ports;
+using System.Data;
+using System.IO;
+using NationalInstruments.VisaNS;
+using Coil_Diagnostor.Function;
+
+namespace Coil_Diagnostor.Device
+{
+    public class ClassLCRMeterProcess
+    {
+        private ResourceManager rmLCR = ResourceManager.GetLocalManager();
+        private MessageBasedSession ecLCR;
+
+        protected string m_strID;                       //장비의 ID 스트링
+        protected string m_strAddr;
+        public bool m_bConnected = false;
+        protected bool m_bStatus = false;
+        protected string[] strResNames;
+
+        public ClassLCRMeterProcess()
+        {
+            m_strID = Gini.GetValue("Device", "LCRMeter_ID");
+        }
+
+        public bool Initialize(string address)
+        {
+            if (m_bConnected == true)
+                return false;
+
+            try
+            {
+                m_strAddr = address;
+
+                strResNames = rmLCR.FindResources(m_strAddr);
+                ecLCR = new MessageBasedSession(strResNames[0]);
+
+                // Set to the Remote State
+                new UsbSession(ecLCR.ResourceName).ControlRen(RenMode.Assert);
+
+                // Clear the device
+                ecLCR.Clear();
+                // Clear the error status
+                ecLCR.Write("*CLS");
+                ecLCR.Write("*RST");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+                m_bConnected = false;
+                return false;
+            }
+
+            if (GetID() == m_strID.Substring(0, 8))
+                m_bConnected = true;
+            else
+                m_bConnected = false;
+
+            return true;
+        }
+
+        public void Close()
+        {
+            // Clear the Remote state
+            if (m_bConnected == true)
+            {
+                new UsbSession(ecLCR.ResourceName).ControlRen(RenMode.Deassert);
+
+                ecLCR.Terminate();
+                ecLCR.Dispose();
+                m_bConnected = false;
+            }
+        }
+
+        /// <summary>
+        /// 장비의 ID를 가져옵니다.
+        /// </summary>
+        /// <returns></returns>
+ 
+        public string GetID()
+        {
+            string strRet = "";
+
+            try
+            {
+                strRet = ecLCR.Query("*IDN?");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+
+            return strRet.Substring(0, 8);
+        }
+
+        public bool IsOpen
+        {
+            get { return m_bConnected; }
+        }
+
+        public string DeviceAddress
+        {
+            get { return m_strAddr; }
+            set { m_strAddr = value; }
+        }
+
+        public bool IsSelfTestOK()
+        {
+            if (GetID() == m_strID)
+                m_bConnected = true;
+            else
+                m_bConnected = false;
+
+            return m_bConnected;
+        }
+               
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool OptSelect(string _strCommand)          
+        {
+            string strData;
+
+            if (m_bConnected == false)
+                return false;
+
+            strData = String.Format(_strCommand.Trim());
+            
+            try
+            {
+                ecLCR.Write(strData);
+
+                System.Threading.Thread.Sleep(500);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// LCR 데이터 반복 읽기
+        /// </summary>
+        /// <param name="nCnt"></param>
+        /// <returns></returns>
+        public decimal LCRReadFunRepeat(int nCnt, int nSleep, bool _boolCapacitance)          
+        {
+            double dSum = 0;
+            decimal dValue = 0M;
+            string strRet = "";
+            int tempFirstInd = 0;
+            string strFirstVal = "";
+
+            try
+            {
+                System.Threading.Thread.Sleep(nSleep);
+
+                for (int i = 0; i < nCnt; i++)
+                {
+                    ecLCR.Write(Function.FunctionLCRMeterinfo.strCmd_LCRMeter_FETCHOutp.Trim());
+                    strRet = ecLCR.ReadString();
+                    tempFirstInd = strRet.IndexOf(",");
+
+                    string[] arrayRet = strRet.Split(',');
+
+                    // data example : +2.03556E-5,+7.98219E-3,+0
+                    if (_boolCapacitance)
+                    {
+                        strFirstVal = arrayRet[0].Substring(0, tempFirstInd);
+
+                        dSum = dSum + Convert.ToDouble(strFirstVal.Trim()) * 1000;
+                    }
+                    else
+                    {
+                        strFirstVal = arrayRet[1].Substring(0, tempFirstInd);
+
+                        dSum = dSum + Convert.ToDouble(strFirstVal.Trim());
+                    }
+                }
+
+                dValue = Convert.ToDecimal(dSum) / Convert.ToDecimal(nCnt);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+
+            return dValue;
+        }
+
+        /// <summary>
+        /// 주파수 설정
+        /// </summary>
+        /// <param name="nIdx"></param>
+        /// <returns></returns>
+        public bool OptFreqSelect(decimal nIdx)   
+        {
+            string strData;
+
+            if (m_bConnected == false)
+                return false;
+
+            strData = String.Format(Function.FunctionLCRMeterinfo.strCmd_LCRMeter_FREQuency.Trim(), nIdx);
+
+            try
+            {
+                ecLCR.Write(strData);
+                
+                System.Threading.Thread.Sleep(10);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 전압레벨 설정
+        /// </summary>
+        /// <param name="nIdx"></param>
+        /// <returns></returns>
+        public bool OptLevelSelect(decimal nIdx)   
+        {
+            string strData;
+
+            if (m_bConnected == false)
+                return false;
+
+            strData = String.Format(Function.FunctionLCRMeterinfo.strCmd_LCRMeter_VOLTage.Trim(), nIdx);
+
+            try
+            {
+                ecLCR.Write(strData);
+
+                System.Threading.Thread.Sleep(10);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+                return false;
+            }
+
+            return true;            
+        }
+
+        /// <summary>
+        /// Mode 설정
+        /// </summary>
+        /// <param name="nIdx"></param>
+        /// <returns></returns>
+        public bool OptModeSelect(int nIdx)
+        {
+            string strData;
+
+            if (m_bConnected == false)
+                return false;
+
+            strData = String.Format(Function.FunctionLCRMeterinfo.strCmd_LCRMeter_APERMED.Trim(), nIdx);
+
+            try
+            {
+                ecLCR.Write(strData);
+
+                System.Threading.Thread.Sleep(10);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Range 설정
+        /// </summary>
+        /// <param name="nIdx"></param>
+        /// <returns></returns>
+        public bool OptRangeSelect(decimal nIdx)
+        {
+            string strData;
+
+            if (m_bConnected == false)
+                return false;
+
+            strData = String.Format(Function.FunctionLCRMeterinfo.strCmd_LCRMeter_Range.Trim(), nIdx);
+
+            try
+            {
+                ecLCR.Write(strData);
+
+                System.Threading.Thread.Sleep(10);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+	}
+}

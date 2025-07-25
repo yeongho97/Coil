@@ -1,0 +1,2354 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Text.RegularExpressions;
+using Coil_Diagnostor.UserControl;
+using Coil_Diagnostor.Function;
+using System.Diagnostics;
+
+namespace Coil_Diagnostor
+{
+    public partial class frmRCSDiagnosis : System.Windows.Forms.Form
+    {
+        protected Function.FunctionMeasureProcess m_MeasureProcess = new Function.FunctionMeasureProcess();
+        protected Function.FunctionDataControl m_db = new Function.FunctionDataControl();
+        protected frmMessageBox frmMB = new frmMessageBox();
+        protected string strPlantName = "";
+        protected bool boolMessageOK = false;
+        protected bool boolFormLoad = false;
+        protected bool boollInitialize = false;
+        public bool boolMeasurementStart = false;
+        public bool boolMeasurementStop = false;
+        public bool boolNormalMode = false;
+        public bool boolDAQ = false;
+        public bool boolLCRMeter = false;
+        public static Thread threadMeasurementStart;
+        public static Thread threadMeasurementStop;
+        private RCSRodCabinetPanel rcsPanel;
+
+        // 전력함에 따라 제어봉 선택 여부
+        public bool[] boolRCSSelectControlRodItem = new bool[14]; // max RodCount 12 -> 14
+
+        public string strSelectPowerCabinet = "";
+        public string strMeasurementDate = "";
+        public string strMeasurementResult = "";
+        public string strDAQDeviceName = "";
+
+        public int intPowerCabinetButtonSelectIndex = 1;
+        public decimal dcmFrequency = 120M;
+        public decimal dcmVoltageLevel = 1M;
+        public decimal dcmTemperature_ReferenceValue = 0M;
+        public decimal dcmTemperature_ChangeValue = 0M;
+        public decimal dcmTemperature_Measurement = 0M;
+
+        public string[] arrayCard01_NormalModePinMap = new string[6];
+        public string[] arrayCard02_NormalModePinMap = new string[6];
+        public string[] arrayCard03_NormalModePinMap = new string[6];
+        public string[] arrayCard04_NormalModePinMap = new string[6];
+        public string[] arrayCard05_NormalModePinMap = new string[6];
+        public string[] arrayCard06_NormalModePinMap = new string[6];
+
+        public string[] arrayCard01_WheatstoneModePinMap = new string[6];
+        public string[] arrayCard02_WheatstoneModePinMap = new string[6];
+        public string[] arrayCard03_WheatstoneModePinMap = new string[6];
+        public string[] arrayCard04_WheatstoneModePinMap = new string[6];
+        public string[] arrayCard05_WheatstoneModePinMap = new string[6];
+        public string[] arrayCard06_WheatstoneModePinMap = new string[6];
+        
+        protected CheckBox allCheck = new CheckBox();
+        protected bool isCheck = true;
+
+        public frmRCSDiagnosis()
+        {
+            CheckForIllegalCrossThreadCalls = false;
+            InitializeComponent();
+
+            // 카드 핀맵 초기화
+            CardPinMapArrayInitialize();
+        }
+
+        /// <summary>
+        /// 카드 핀맵 초기화
+        /// </summary>
+        private void CardPinMapArrayInitialize()
+        {
+            for (int i = 0; i < arrayCard01_NormalModePinMap.Length; i++)
+            {
+                // 일반모드 Relay Card별 핀맵 설정
+                arrayCard01_NormalModePinMap[i] = GetNoralModeDAMPinMap(Gini.GetValue("RCS", "RCSNormalMode_SelectDAMRelay1").Trim(), i);
+                arrayCard02_NormalModePinMap[i] = GetNoralModeDAMPinMap(Gini.GetValue("RCS", "RCSNormalMode_SelectDAMRelay2").Trim(), i);
+                arrayCard03_NormalModePinMap[i] = GetNoralModeDAMPinMap(Gini.GetValue("RCS", "RCSNormalMode_SelectDAMRelay3").Trim(), i);
+                arrayCard04_NormalModePinMap[i] = GetNoralModeDAMPinMap(Gini.GetValue("RCS", "RCSNormalMode_SelectDAMRelay4").Trim(), i);
+                arrayCard05_NormalModePinMap[i] = GetNoralModeDAMPinMap(Gini.GetValue("RCS", "RCSNormalMode_SelectDAMRelay5").Trim(), i);
+                arrayCard06_NormalModePinMap[i] = GetNoralModeDAMPinMap(Gini.GetValue("RCS", "RCSNormalMode_SelectDAMRelay6").Trim(), i);
+
+                // 휘스톤모드 Relay Card별 핀맵 설정
+                arrayCard01_WheatstoneModePinMap[i] = GetWheatstoneModeDAMPinMap(Gini.GetValue("RCS", "RCSWheatstoneMode_SelectDAMRelay1").Trim(), i);
+                arrayCard02_WheatstoneModePinMap[i] = GetWheatstoneModeDAMPinMap(Gini.GetValue("RCS", "RCSWheatstoneMode_SelectDAMRelay2").Trim(), i);
+                arrayCard03_WheatstoneModePinMap[i] = GetWheatstoneModeDAMPinMap(Gini.GetValue("RCS", "RCSWheatstoneMode_SelectDAMRelay3").Trim(), i);
+                arrayCard04_WheatstoneModePinMap[i] = GetWheatstoneModeDAMPinMap(Gini.GetValue("RCS", "RCSWheatstoneMode_SelectDAMRelay4").Trim(), i);
+                arrayCard05_WheatstoneModePinMap[i] = GetWheatstoneModeDAMPinMap(Gini.GetValue("RCS", "RCSWheatstoneMode_SelectDAMRelay5").Trim(), i);
+                arrayCard06_WheatstoneModePinMap[i] = GetWheatstoneModeDAMPinMap(Gini.GetValue("RCS", "RCSWheatstoneMode_SelectDAMRelay6").Trim(), i);
+            }
+        }
+
+        /// <summary>
+        /// 일반모드 Relay Card별 핀맵 설정
+        /// </summary>
+        /// <param name="_strSelectDAMRelay"></param>
+        /// <param name="intSelectIndex"></param>
+        /// <returns></returns>
+        private string GetNoralModeDAMPinMap(string _strSelectDAMRelay, int intSelectIndex)
+        {
+            string strResult = "";
+
+            //_strSelectDAMRelay
+            strResult = string.Format(Gini.GetValue("DAM_PinName", $"{_strSelectDAMRelay.Replace(" ", "")}_RelayCardNumberDAQPinName".Trim()), Gini.GetValue("Device", "DAQDeviceName").Trim(), strResult.Trim());
+            //intSelectIndex
+            strResult = string.Format(Gini.GetValue("Channel_PinName", $"NormalModeCh{intSelectIndex + 1}_DAQPinName").Trim(), Gini.GetValue("Device", "DAQDeviceName").Trim(), strResult.Trim());
+            return strResult.Trim();
+        }
+
+        /// <summary>
+        /// 휘스톤모드 Relay Card별 핀맵 설정
+        /// </summary>
+        /// <param name="_strSelectDAMRelay"></param>
+        /// <param name="intSelectIndex"></param>
+        /// <returns></returns>
+        private string GetWheatstoneModeDAMPinMap(string _strSelectDAMRelay, int intSelectIndex)
+        {
+            string strResult = "";
+            //_strSelectDAMRelay
+            strResult = string.Format(Gini.GetValue("DAM_PinName", $"{_strSelectDAMRelay.Replace(" ", "")}_RelayCardNumberDAQPinName".Trim()), Gini.GetValue("Device", "DAQDeviceName").Trim(), strResult.Trim());
+            //intSelectIndex
+            strResult = string.Format(Gini.GetValue("Channel_PinName", $"WheatstoneModeCh{intSelectIndex + 1}_DAQPinName").Trim(), Gini.GetValue("Device", "DAQDeviceName").Trim(), strResult.Trim());
+            return strResult.Trim();
+        }
+
+        /// <summary>
+        /// 폼 단축키 지정
+        /// </summary>
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
+        {
+            Keys key = keyData & ~(Keys.Shift | Keys.Control);
+
+            switch (key)
+            {
+                case Keys.F2: // 측정 버튼
+                    btnMeasurementStart.PerformClick();
+                    break;
+                case Keys.F3: // 정지 버튼
+                    btnMeasurementStop.PerformClick();
+                    break;
+                case Keys.F4: // 저장 버튼
+                    btnSave.PerformClick();
+                    break;
+                case Keys.F5: // 카드 선택 버튼
+                    btnSelectCard.PerformClick();
+                    break;
+                case Keys.F8: // PinMap Column 활성화/비활성화 설정 
+                    if (dgvMeasurement.Columns["DAQPinMap"].Visible)
+                    {
+                        dgvMeasurement.Columns["DAMName"].Visible = false;
+                        dgvMeasurement.Columns["DAQPinMap"].Visible = false;
+                        dgvMeasurement.Columns["Channel"].Visible = false;
+                    }
+                    else
+                    {
+                        dgvMeasurement.Columns["DAMName"].Visible = true;
+                        dgvMeasurement.Columns["DAQPinMap"].Visible = true;
+                        dgvMeasurement.Columns["Channel"].Visible = true;
+                    }
+                    break;
+                case Keys.F12: // 닫기 버튼
+                    btnClose.PerformClick();
+                    break;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        /// <summary>
+        /// Form Load
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void frmRCSDiagnosis_Load(object sender, EventArgs e)
+        {
+            boolFormLoad = true;
+
+            strPlantName = Gini.GetValue("Device", "PlantName").Trim();
+            rcsPanel = new RCSRodCabinetPanel(panel7, strPlantName, 1);
+            rcsPanel.Click += RcsPanel_Click;
+            rcsPanel.InitializePanel();
+            // ComboBox 데이터 설정
+            SetComboBoxDataBinding();
+
+            // 초기화
+            SetControlInitialize();
+
+            // 그리드 초기 설정
+            SetDataGridViewInitialize();
+
+            // LCR-Meter 접속 체크
+            if (m_MeasureProcess.DaqAndLCRMeterCommunication(Gini.GetValue("Device", "DAQDeviceName").Trim(), Gini.GetValue("Device", "LCRMeter_Addr").Trim(), ref boolDAQ, ref boolLCRMeter))
+            {
+                //측정 시작 중단에 따라 버튼 활성화/비활성화 설정
+                SetMeasurementStartButtonEnabled(true);
+            }
+            else
+            {
+                btnMeasurementStart.Enabled = false;
+                btnMeasurementStop.Enabled = false;
+                btnSave.Enabled = false;
+            }
+
+            ledRDAQ.On = boolDAQ;
+            ledLCRMeter.On = boolLCRMeter;
+
+            // 포인트
+            cboHogi.Focus();
+
+            boolFormLoad = false;
+        }
+
+        private void RcsPanel_Click(object sender, EventArgs e)
+        {
+            RCSRodCabinetPanel p = sender as RCSRodCabinetPanel;
+
+            if(p.SelectedRodChanged)
+            {
+                int selectedRod = p.GetSelectedRod();
+                for (int i = 0; i < boolRCSSelectControlRodItem.Length; i++)
+                {
+                    boolRCSSelectControlRodItem[i] = (selectedRod & (1 << i)) != 0;
+                }
+                SetDataGridViewRowAdd(p.LastSelectedRod, p.GetRodName());
+            }
+            else
+            {
+                dgvMeasurement.Rows.Clear();
+                bool[] buttons;
+                
+                strSelectPowerCabinet = p.GetCabinetName();
+                buttons = SetButtonControlRodColor(Gini.GetValue("RCS", $"RCSPowerCabinetItem_{strSelectPowerCabinet}").Split(','));
+                // todo : 이거 수정하는 중이었음 어떻게 할지 생각해야됨
+                p.SetColorRodButton(buttons);
+            }
+        }
+
+        /// <summary>
+        /// Form Closing Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void frmRCSDiagnosis_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Gini.SetValue("RCS", "SelectRCS_Hogi", cboHogi.SelectedItem.ToString().Trim());
+            Gini.SetValue("RCS", "SelectRCS_OHDegree", teOhDegree2.Text.Trim());
+        }
+
+        /// <summary>
+        /// ComboBox 데이터 설정
+        /// </summary>
+        private void SetComboBoxDataBinding()
+        {
+            // 발전소 호기
+            string[] strHogi = Gini.GetValue("Combo", "HogiData").Split(',');
+
+            DataTable dt = new DataTable();
+            dt = m_db.GetRCSReferenceValueOhDegreeData(strPlantName.Trim());
+
+            cboHogi.Items.Clear();
+
+            // 기본 호기 설정
+            for (int i = 0; i < strHogi.Length; i++)
+            {
+                cboHogi.Items.Add(strHogi[i].Trim());
+            }
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    if (dt.Rows[i]["Hogi"].ToString().Trim() == "1 호기"
+                        || dt.Rows[i]["Hogi"].ToString().Trim() == "2 호기")
+                        continue;
+
+                    cboHogi.Items.Add(dt.Rows[i]["Hogi"].ToString().Trim());
+                }
+            }
+
+            // 호기 선택
+            if (Gini.GetValue("RCS", "SelectRCS_Hogi").Trim() == "")
+            {
+                // 최초 실행 시 기본 호기 선택
+                cboHogi.SelectedIndex = 0;
+            }
+            else
+            {
+                // 직전 실행 시 기본 호기 선택
+                cboHogi.SelectedItem = Gini.GetValue("RCS", "SelectRCS_Hogi").Trim();
+            }
+
+            // 주파수
+            string[] strFrequencyItem = Gini.GetValue("Combo", "FrequencyItem").Split(',');
+
+            cboFrequency.Items.Clear();
+
+            for (int i = 0; i < strFrequencyItem.Length; i++)
+            {
+                cboFrequency.Items.Add(strFrequencyItem[i].Trim());
+            }
+            
+            // 전압레벨
+            string[] strVoltageLevelItem;
+            cboVoltageLevel.Items.Clear();
+            
+			strVoltageLevelItem = Gini.GetValue("Combo", "VoltageLevelItem1").Split(',');
+            for (int i = 0; i < strVoltageLevelItem.Length; i++)
+            {
+                cboVoltageLevel.Items.Add(strVoltageLevelItem[i].Trim());
+            }
+            strVoltageLevelItem = Gini.GetValue("Combo", "VoltageLevelItem2").Split(',');
+            for (int i = 0; i < strVoltageLevelItem.Length; i++)
+            {
+                cboVoltageLevel.Items.Add(strVoltageLevelItem[i].Trim());
+            }
+
+            // 측정 횟수
+            string[] strMeasurementCountItem = Gini.GetValue("Combo", "MeasurementCountItem").Split(',');
+
+            cboMeasurementCount.Items.Clear();
+
+            for (int i = 0; i < strMeasurementCountItem.Length; i++)
+            {
+                cboMeasurementCount.Items.Add(strMeasurementCountItem[i].Trim());
+            }
+        }
+
+        /// <summary>
+        /// 초기화
+        /// </summary>
+        private void SetControlInitialize()
+        {
+            // 온도 및 온도 증감 값
+            dcmTemperature_ReferenceValue = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "Temperature_ReferenceValue"));
+            teTemperature_ReferenceValue.Text = Gini.GetValue("ReferenceValue", "Temperature_ReferenceValue").Trim();
+            teTemperatureUpDown_ReferenceValue.Text = Gini.GetValue("ReferenceValue", "TemperatureUpDown_ReferenceValue").Trim();
+
+            // 주파수 기본 선택
+            cboFrequency.SelectedIndex = 1;
+
+            // 전압레벨 기본 선택
+            cboVoltageLevel.SelectedItem = "1000mV";
+
+            // 측정 횟수 기본 선택 (1회로 기본 설정)
+            cboMeasurementCount.SelectedIndex = 0;
+
+            // 측정 모드 
+            rboNormalMode.Checked = true;
+            rboWheatstoneMode.Checked = false;
+            
+            if (rboNormalMode.Checked)
+                boolNormalMode = true;
+            else
+                boolNormalMode = false;
+
+            // 측정 대상
+            chkRdc.Checked = true;
+            chkRac.Checked = true;
+            chkL.Checked = true;
+            chkC.Checked = false;
+            chkQ.Checked = true;
+        }
+
+        /// <summary>
+        /// 온도 변경 이벤트
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void teTemperature_ReferenceValue_TextChanged(object sender, EventArgs e)
+        {
+            dcmTemperature_ChangeValue = teTemperature_ReferenceValue.Text.Trim() == "" ? 0M : Convert.ToDecimal(teTemperature_ReferenceValue.Text.Trim());
+            decimal dcmTemperatureUpDown_ReferenceValue = teTemperatureUpDown_ReferenceValue.Text.Trim() == "" ? 0M : Convert.ToDecimal(teTemperatureUpDown_ReferenceValue.Text.Trim());
+
+            dcmTemperature_Measurement = (dcmTemperature_ChangeValue - dcmTemperature_ReferenceValue) * dcmTemperatureUpDown_ReferenceValue;
+        }
+
+        /// <summary>
+        /// 온도 증/감 변경 이벤트
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void teTemperatureUpDown_ReferenceValue_TextChanged(object sender, EventArgs e)
+        {
+            decimal dcmTemperatureUpDown_ReferenceValue = teTemperatureUpDown_ReferenceValue.Text.Trim() == "" ? 0M : Convert.ToDecimal(teTemperatureUpDown_ReferenceValue.Text.Trim());
+
+            dcmTemperature_Measurement = (dcmTemperature_ChangeValue - dcmTemperature_ReferenceValue) * dcmTemperatureUpDown_ReferenceValue;
+        }
+
+        /// <summary>
+        /// 그리드 초기 설정
+        /// </summary>
+        private void SetDataGridViewInitialize()
+        {
+            try
+            {
+                //----- DataGridView Column 추가
+                DataGridViewCheckBoxColumn Column = new DataGridViewCheckBoxColumn();
+                DataGridViewTextBoxColumn Column1 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column2 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column3 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column4 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column5 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column6 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column7 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column8 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column9 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column10 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column11 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column12 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column13 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column14 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column15 = new DataGridViewTextBoxColumn();
+                DataGridViewTextBoxColumn Column16 = new DataGridViewTextBoxColumn();
+				DataGridViewTextBoxColumn Column17 = new DataGridViewTextBoxColumn();
+
+                Column.HeaderText = "";
+                Column.Name = "Select";
+                Column.Width = 40;
+                Column.ReadOnly = true;
+                Column.Visible = true;
+                Column.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                Column.DefaultCellStyle.BackColor = System.Drawing.Color.Silver;
+
+                Column1.HeaderText = "제어봉";
+                Column1.Name = "ControlName";
+                Column1.Width = 60;
+                Column1.ReadOnly = true;
+                Column1.Visible = true;
+                Column1.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column1.SortMode = DataGridViewColumnSortMode.NotSortable;
+                Column1.DefaultCellStyle.BackColor = System.Drawing.Color.Silver;
+
+                Column2.HeaderText = "코일명";
+                Column2.Name = "CoilName";
+                Column2.Width = 80;
+                Column2.ReadOnly = true;
+                Column2.Visible = true;
+                Column2.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column2.SortMode = DataGridViewColumnSortMode.NotSortable;
+                Column2.DefaultCellStyle.BackColor = System.Drawing.Color.Silver;
+
+                Column3.HeaderText = "Index";
+                Column3.Name = "CoilNumber";
+                Column3.Width = 80;
+                Column3.ReadOnly = true;
+                Column3.Visible = false;
+                Column3.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column3.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column4.HeaderText = "DC 저항(Ω)";
+                Column4.Name = "DC_ResistanceValue";
+                Column4.Width = 90;
+                Column4.ReadOnly = false;
+                Column4.Visible = chkRdc.Checked;
+                Column4.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column4.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column5.HeaderText = "편차(Ω)";
+                Column5.Name = "DC_Deviation";
+                Column5.Width = 80;
+                Column5.ReadOnly = false;
+                Column5.Visible = chkRdc.Checked;
+                Column5.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column5.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column6.HeaderText = "AC 저항(Ω)";
+                Column6.Name = "AC_ResistanceValue";
+                Column6.Width = 90;
+                Column6.ReadOnly = false;
+                Column6.Visible = chkRac.Checked;
+                Column6.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column6.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column7.HeaderText = "편차(Ω)";
+                Column7.Name = "AC_Deviation";
+                Column7.Width = 80;
+                Column7.ReadOnly = false;
+                Column7.Visible = chkRac.Checked;
+                Column7.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column7.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column8.HeaderText = "인덕턴스(mH)";
+                Column8.Name = "L_InductanceValue";
+                Column8.Width = 90;
+                Column8.ReadOnly = false;
+                Column8.Visible = chkL.Checked;
+                Column8.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column8.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column9.HeaderText = "편차(mH)";
+                Column9.Name = "L_Deviation";
+                Column9.Width = 80;
+                Column9.ReadOnly = false;
+                Column9.Visible = chkL.Checked;
+                Column9.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column9.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column10.HeaderText = "캐패시턴스(uF)";
+                Column10.Name = "C_CapacitanceValue";
+                Column10.Width = 100;
+                Column10.ReadOnly = false;
+                Column10.Visible = chkC.Checked;
+                Column10.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column10.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column11.HeaderText = "편차(uF)";
+                Column11.Name = "C_Deviation";
+                Column11.Width = 80;
+                Column11.ReadOnly = false;
+                Column11.Visible = chkC.Checked;
+                Column11.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column11.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column12.HeaderText = "Q Factor";
+                Column12.Name = "Q_FactorValue";
+                Column12.Width = 90;
+                Column12.ReadOnly = false;
+                Column12.Visible = chkQ.Checked;
+                Column12.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column12.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column13.HeaderText = "편차";
+                Column13.Name = "Q_Deviation";
+                Column13.Width = 80;
+                Column13.ReadOnly = false;
+                Column13.Visible = chkQ.Checked;
+                Column13.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column13.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column14.HeaderText = "결과";
+                Column14.Name = "Result";
+                Column14.Width = 70;
+                Column14.ReadOnly = true;
+                Column14.Visible = true;
+                Column14.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column14.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column15.HeaderText = "DAM";
+                Column15.Name = "DAMName";
+                Column15.Width = 80;
+                Column15.ReadOnly = true;
+                Column15.Visible = false;
+                Column15.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column15.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column16.HeaderText = "채널";
+                Column16.Name = "Channel";
+                Column16.Width = 60;
+                Column16.ReadOnly = true;
+                Column16.Visible = false;
+                Column16.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                Column16.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                Column17.HeaderText = "DAQPinMap";
+                Column17.Name = "DAQPinMap";
+                Column17.Width = 500;
+                Column17.ReadOnly = true;
+                Column17.Visible = false;
+                Column17.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+                Column17.SortMode = DataGridViewColumnSortMode.NotSortable;
+
+                dgvMeasurement.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] { Column, Column1, Column2, Column3
+                    , Column4, Column5, Column6, Column7, Column8, Column9, Column10, Column11, Column12, Column13, Column14
+                    , Column15, Column16, Column17 });
+
+                dgvMeasurement.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+                dgvMeasurement.ColumnHeadersHeight = 40;
+                dgvMeasurement.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                dgvMeasurement.RowHeadersWidth = 40;
+
+                // DataGridView 기타 세팅
+                dgvMeasurement.AllowUserToAddRows = false; // Row 추가 기능 미사용
+                dgvMeasurement.AllowUserToDeleteRows = false; // Row 삭제 기능 미사용
+
+                // CheckBox 세팅
+                allCheck.Name = "allCheck";
+                allCheck.CheckedChanged += new EventHandler(AllCheckClick);
+                allCheck.Size = new Size(13, 13);
+                allCheck.Location = new Point(((dgvMeasurement.Columns[0].Width / 2) - (allCheck.Width / 2)), (dgvMeasurement.ColumnHeadersHeight / 2) - (allCheck.Height / 2));
+                dgvMeasurement.Controls.Add(allCheck); // DataGridView에 CheckBox 추가( 헤더용 )
+                allCheck.Checked = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// DataGridView의 모든 CheckBoxCell Checked값 적용
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void AllCheckClick(object sender, EventArgs e)
+        {
+            if (isCheck)
+            {
+                if (allCheck.Checked)
+                    for (int i = 0; i < dgvMeasurement.Rows.Count; i++)
+                        dgvMeasurement.Rows[i].Cells[0].Value = true;
+                else
+                    for (int i = 0; i < dgvMeasurement.Rows.Count; i++)
+                        dgvMeasurement.Rows[i].Cells[0].Value = false;
+
+                dgvMeasurement.EndEdit(DataGridViewDataErrorContexts.Commit); // << 이거 안할경우 선택된 Cell이 CheckBoxCell일 경우 변화가 없는것처럼 보임
+            }
+        }
+
+        private bool[] SetButtonControlRodColor(string[] _arrayControlRod)
+        {
+            string strHog = cboHogi.SelectedItem == null ? "" : cboHogi.SelectedItem.ToString().Trim();
+            string strOh_Degree = teOhDegree2.Text.Trim() == "" ? "" : string.Format("제 {0} 차", teOhDegree2.Text.Trim());
+            string strPowerCabinet = strSelectPowerCabinet;
+            bool[] b = new bool[14];
+            for (int i = 0; i < _arrayControlRod.Length; i++)
+            {
+                string strControlName = _arrayControlRod[i] == null ? "" : _arrayControlRod[i].ToString().Trim();
+                int intCount = m_db.GetRCSDiagnosisDetailDataGridViewDataCount(strPlantName.Trim(), strHog.Trim(), strOh_Degree.Trim(), strPowerCabinet.Trim(), strControlName.Trim());
+
+                if (intCount > 0)
+                {
+                    b[i] = true;
+                }
+                else
+                {
+                    b[i] = false;
+                }
+            }
+            return b;
+        }
+
+        /// <summary>
+        /// 제어봉 선택에 따라 그리드 행 추가
+        /// </summary>
+        /// <param name="_intRowStartIndex"></param>
+        /// <param name="_strControlName"></param>
+        private void SetDataGridViewRowAdd(int _intSelectIndex, string rodName)
+        {
+            try
+            {
+                // 그리드 행 추가 시작 Index 구하기
+                int intItemCount = cboMeasurementCount.SelectedItem == null || cboMeasurementCount.SelectedItem.ToString().Trim() == "" ? 1 : (Convert.ToInt32(Regex.Replace(cboMeasurementCount.SelectedItem.ToString().Trim(), @"\D", "")));
+                //int intButtonSelectNumber = Convert.ToInt32(Regex.Replace(_btn.Name.Trim(), @"\D", ""));
+                int intButtonSelectNumber = _intSelectIndex + 1;
+                int intButtonSelectBeforeCount = 0, intButtonSelectAfterCount = 0;
+
+                for(int i = 0; i < boolRCSSelectControlRodItem.Length; i++)
+                {
+                    if (boolRCSSelectControlRodItem[i])
+                    {
+                        if(i < _intSelectIndex)
+                        {
+                            intButtonSelectBeforeCount++;
+                        }
+                        else if(i > _intSelectIndex)
+                        {
+                            intButtonSelectAfterCount++;
+                        }
+                    }
+                }
+
+                int intRowStartIndex = 0, intRowEndCount = 0, intRow = 0, intCoilNameCount = 1;
+                intRowEndCount = intItemCount * 3;
+                intRowStartIndex = intButtonSelectBeforeCount > 0 ? (intButtonSelectBeforeCount * intRowEndCount) : 0;
+
+                if (intButtonSelectAfterCount > 0)
+                    intRow = intRowStartIndex;
+
+                string strCoilName = "정지";
+                //bool[] buttons = new bool[32];
+                //for(int i = 0; i < buttons.Length; i++) 
+                //{
+                
+                //}
+                if (boolRCSSelectControlRodItem[_intSelectIndex])
+                {
+                    for (int i = 0; i < intRowEndCount; i++)
+                    {
+                        if (intButtonSelectAfterCount > 0)
+                        {
+                            dgvMeasurement.Rows.Insert(intRow, 1);
+                            dgvMeasurement.Rows[intRow].Cells["Select"].Value = allCheck.Checked;
+                            //dgvMeasurement.Rows[intRow].Cells["ControlName"].Value = _btn.Text.Trim();
+                            dgvMeasurement.Rows[intRow].Cells["ControlName"].Value = rodName;
+
+                            if (intCoilNameCount < intItemCount)
+                            {
+                                dgvMeasurement.Rows[intRow].Cells["CoilName"].Value = strCoilName.Trim();
+                                dgvMeasurement.Rows[intRow].Cells["CoilNumber"].Value = intCoilNameCount.ToString().Trim();
+                                intCoilNameCount++;
+                            }
+                            else
+                            {
+                                dgvMeasurement.Rows[intRow].Cells["CoilName"].Value = strCoilName.Trim();
+                                dgvMeasurement.Rows[intRow].Cells["CoilNumber"].Value = intCoilNameCount.ToString().Trim();
+
+                                if (strCoilName.Trim() == "정지")
+                                    strCoilName = "올림";
+                                else if (strCoilName.Trim() == "올림")
+                                    strCoilName = "이동";
+
+                                intCoilNameCount = 1;
+                            }
+
+                            dgvMeasurement.Rows[intRow].Cells["DC_ResistanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["DC_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["AC_ResistanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["AC_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["L_InductanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["L_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["C_CapacitanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["C_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["Q_FactorValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["Q_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["Result"].Value = "";
+                            intRow++;
+                        }
+                        else
+                        {
+                            intRow = dgvMeasurement.Rows.Add();
+
+                            dgvMeasurement.Rows[intRow].Cells["Select"].Value = allCheck.Checked;
+                            //dgvMeasurement.Rows[intRow].Cells["ControlName"].Value = _btn.Text.Trim();
+                            dgvMeasurement.Rows[intRow].Cells["ControlName"].Value = rodName;
+
+                            if (intCoilNameCount < intItemCount)
+                            {
+                                dgvMeasurement.Rows[intRow].Cells["CoilName"].Value = strCoilName.Trim();
+                                dgvMeasurement.Rows[intRow].Cells["CoilNumber"].Value = intCoilNameCount.ToString().Trim();
+                                intCoilNameCount++;
+                            }
+                            else
+                            {
+                                dgvMeasurement.Rows[intRow].Cells["CoilName"].Value = strCoilName.Trim();
+                                dgvMeasurement.Rows[intRow].Cells["CoilNumber"].Value = intCoilNameCount.ToString().Trim();
+
+                                if (strCoilName.Trim() == "정지")
+                                    strCoilName = "올림";
+                                else if (strCoilName.Trim() == "올림")
+                                    strCoilName = "이동";
+
+                                intCoilNameCount = 1;
+                            }
+
+                            dgvMeasurement.Rows[intRow].Cells["DC_ResistanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["DC_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["AC_ResistanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["AC_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["L_InductanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["L_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["C_CapacitanceValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["C_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["Q_FactorValue"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["Q_Deviation"].Value = "";
+                            dgvMeasurement.Rows[intRow].Cells["Result"].Value = "";
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = dgvMeasurement.RowCount - 1; i >= 0; i--)
+                    {
+                        //if (dgvMeasurement.Rows[i].Cells["ControlName"].Value.ToString().Trim() == _btn.Text.Trim())
+                        if (dgvMeasurement.Rows[i].Cells["ControlName"].Value.ToString().Trim() == rodName)
+                            dgvMeasurement.Rows.RemoveAt(i);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 호기 Selected Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboHogi_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (boolMeasurementStart) return;
+            
+            teOhDegree2.Text = Gini.GetValue("RCS", "SelectRCS_OHDegree").Trim();
+            
+            // 기준값 가져온다
+            GetReferenceValue();
+            rcsPanel.InitializePanel();
+        }
+
+        /// <summary>
+        /// Oh Degree 변경 후 Control에서 이동 시 Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void teOhDegree2_Leave(object sender, EventArgs e)
+        {
+            if (boolMeasurementStart) return;
+
+            // 기준값 가져온다
+            GetReferenceValue();
+            rcsPanel.InitializePanel();
+        }
+
+        /// <summary>
+        /// 기준값 가져온다
+        /// </summary>
+        private void GetReferenceValue()
+        {
+            string strSelectHogi = cboHogi.SelectedItem == null ? "" : cboHogi.SelectedItem.ToString().Trim();
+            string strSelectOhDegree = lblOhDegree1.Text.Trim() + " " + teOhDegree2.Text.Trim() + " " + lblOhDegree3.Text.Trim();
+
+            DataTable dt = new DataTable();
+
+            // 해당 차수의 기준 값 유무 체크
+            if ((m_db.GetRCSReferenceValueDataCount(strPlantName.Trim(), strSelectHogi.Trim(), strSelectOhDegree.Trim())) > 0)
+            {
+                // 해당 차수의 기준 값을 가져온다.
+                dt = m_db.GetRCSReferenceValueDataInfo(strPlantName.Trim(), strSelectHogi.Trim(), strSelectOhDegree.Trim());
+            }
+            else
+            {
+                // MAX OH 차수를 가져온다.
+                int intMaxOhDegree = m_db.GetRCSReferenceValueDataMaxOhDegree(strPlantName.Trim(), strSelectHogi.Trim());
+
+                if (intMaxOhDegree > 0)
+                {
+                    // MAX 차수의 기준 값을 가져온다.
+                    dt = m_db.GetRCSReferenceValueDataInfo(strPlantName.Trim(), strSelectHogi.Trim(), intMaxOhDegree.ToString().Trim());
+                }
+                else
+                {
+                    // 초기값 0 차수의 기준 값을 가져온다.
+                    dt = m_db.GetRCSReferenceValueDataInfo(strPlantName.Trim(), "초기값", "제 0 차");
+                }
+            }
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                teRdcStop_RCSReferenceValue.Text = dt.Rows[0]["RdcStop_RCSReferenceValue"] == null || dt.Rows[0]["RdcStop_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["RdcStop_RCSReferenceValue"].ToString().Trim();
+                teRdcUp_RCSReferenceValue.Text = dt.Rows[0]["RdcUp_RCSReferenceValue"] == null || dt.Rows[0]["RdcUp_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["RdcUp_RCSReferenceValue"].ToString().Trim();
+                teRdcMove_RCSReferenceValue.Text = dt.Rows[0]["RdcMove_RCSReferenceValue"] == null || dt.Rows[0]["RdcMove_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["RdcMove_RCSReferenceValue"].ToString().Trim();
+                teRacStop_RCSReferenceValue.Text = dt.Rows[0]["RacStop_RCSReferenceValue"] == null || dt.Rows[0]["RacStop_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["RacStop_RCSReferenceValue"].ToString().Trim();
+                teRacUp_RCSReferenceValue.Text = dt.Rows[0]["RacUp_RCSReferenceValue"] == null || dt.Rows[0]["RacUp_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["RacUp_RCSReferenceValue"].ToString().Trim();
+                teRacMove_RCSReferenceValue.Text = dt.Rows[0]["RacMove_RCSReferenceValue"] == null || dt.Rows[0]["RacMove_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["RacMove_RCSReferenceValue"].ToString().Trim();
+                teLStop_RCSReferenceValue.Text = dt.Rows[0]["LStop_RCSReferenceValue"] == null || dt.Rows[0]["LStop_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["LStop_RCSReferenceValue"].ToString().Trim();
+                teLUp_RCSReferenceValue.Text = dt.Rows[0]["LUp_RCSReferenceValue"] == null || dt.Rows[0]["LUp_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["LUp_RCSReferenceValue"].ToString().Trim();
+                teLMove_RCSReferenceValue.Text = dt.Rows[0]["LMove_RCSReferenceValue"] == null || dt.Rows[0]["LMove_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["LMove_RCSReferenceValue"].ToString().Trim();
+                teCStop_RCSReferenceValue.Text = dt.Rows[0]["CStop_RCSReferenceValue"] == null || dt.Rows[0]["CStop_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000000" : dt.Rows[0]["CStop_RCSReferenceValue"].ToString().Trim();
+                teCUp_RCSReferenceValue.Text = dt.Rows[0]["CUp_RCSReferenceValue"] == null || dt.Rows[0]["CUp_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000000" : dt.Rows[0]["CUp_RCSReferenceValue"].ToString().Trim();
+                teCMove_RCSReferenceValue.Text = dt.Rows[0]["CMove_RCSReferenceValue"] == null || dt.Rows[0]["CMove_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000000" : dt.Rows[0]["CMove_RCSReferenceValue"].ToString().Trim();
+                teQStop_RCSReferenceValue.Text = dt.Rows[0]["QStop_RCSReferenceValue"] == null || dt.Rows[0]["QStop_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["QStop_RCSReferenceValue"].ToString().Trim();
+                teQUp_RCSReferenceValue.Text = dt.Rows[0]["QUp_RCSReferenceValue"] == null || dt.Rows[0]["QUp_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["QUp_RCSReferenceValue"].ToString().Trim();
+                teQMove_RCSReferenceValue.Text = dt.Rows[0]["QMove_RCSReferenceValue"] == null || dt.Rows[0]["QMove_RCSReferenceValue"].ToString().Trim() == ""
+                    ? "0.000" : dt.Rows[0]["QMove_RCSReferenceValue"].ToString().Trim();
+            }
+            else
+            {
+                teRdcStop_RCSReferenceValue.Text = "0.000";
+                teRdcUp_RCSReferenceValue.Text = "0.000";
+                teRdcMove_RCSReferenceValue.Text = "0.000";
+                teRacStop_RCSReferenceValue.Text = "0.000";
+                teRacUp_RCSReferenceValue.Text = "0.000";
+                teRacMove_RCSReferenceValue.Text = "0.000";
+                teLStop_RCSReferenceValue.Text = "0.000";
+                teLUp_RCSReferenceValue.Text = "0.000";
+                teLMove_RCSReferenceValue.Text = "0.000";
+                teCStop_RCSReferenceValue.Text = "0.000000";
+                teCUp_RCSReferenceValue.Text = "0.000000";
+                teCMove_RCSReferenceValue.Text = "0.000000";
+                teQStop_RCSReferenceValue.Text = "0.000";
+                teQUp_RCSReferenceValue.Text = "0.000";
+                teQMove_RCSReferenceValue.Text = "0.000";
+            }
+        }
+
+        /// <summary>
+        /// 측정 횟수 Selected Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboMeasurementCount_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (boolMeasurementStart) return;
+
+            try
+            {
+                // 그리드 행 초기화
+                dgvMeasurement.Rows.Clear();
+          
+                rcsPanel.SetClearRodButton();
+                bool[] buttons;     // todo : fix -> to much call
+                buttons = SetButtonControlRodColor(Gini.GetValue("RCS", $"RCSPowerCabinetItem_{strSelectPowerCabinet}").Split(','));
+                rcsPanel.SetColorRodButton(buttons);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 측정 대상 Checked Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void chkMeasurementTarget_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                switch (((CheckBox)sender).Name.Trim())
+                {
+                    case "chkRdc":
+                        if (((CheckBox)sender).Checked)
+                        {
+                            dgvMeasurement.Columns[3].Visible = true;
+                            dgvMeasurement.Columns[4].Visible = true;
+                        }
+                        else
+                        {
+                            dgvMeasurement.Columns[3].Visible = false;
+                            dgvMeasurement.Columns[4].Visible = false;
+                        }
+                        break;
+                    case "chkRac":
+                        if (((CheckBox)sender).Checked)
+                        {
+                            dgvMeasurement.Columns[5].Visible = true;
+                            dgvMeasurement.Columns[6].Visible = true;
+                        }
+                        else
+                        {
+                            dgvMeasurement.Columns[5].Visible = false;
+                            dgvMeasurement.Columns[6].Visible = false;
+                        }
+                        break;
+                    case "chkL":
+                        if (((CheckBox)sender).Checked)
+                        {
+                            dgvMeasurement.Columns[7].Visible = true;
+                            dgvMeasurement.Columns[8].Visible = true;
+                        }
+                        else
+                        {
+                            dgvMeasurement.Columns[7].Visible = false;
+                            dgvMeasurement.Columns[8].Visible = false;
+                        }
+                        break;
+                    case "chkC":
+                        if (((CheckBox)sender).Checked)
+                        {
+                            dgvMeasurement.Columns[9].Visible = true;
+                            dgvMeasurement.Columns[10].Visible = true;
+                        }
+                        else
+                        {
+                            dgvMeasurement.Columns[9].Visible = false;
+                            dgvMeasurement.Columns[10].Visible = false;
+                        }
+                        break;
+                    case "chkQ":
+                        if (((CheckBox)sender).Checked)
+                        {
+                            dgvMeasurement.Columns[11].Visible = true;
+                            dgvMeasurement.Columns[12].Visible = true;
+                        }
+                        else
+                        {
+                            dgvMeasurement.Columns[11].Visible = false;
+                            dgvMeasurement.Columns[12].Visible = false;
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 일반모드 Checked Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void rboNormalMode_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rboNormalMode.Checked)
+                boolNormalMode = true;
+            else
+                boolNormalMode = false;
+        }
+
+        /// <summary>
+        /// 휘스톤 Checked Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void rboWheatstoneMode_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rboNormalMode.Checked)
+                boolNormalMode = true;
+            else
+                boolNormalMode = false;
+        }
+
+        /// <summary>
+        /// 주파수 Selelcted Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboFrequency_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (boolMeasurementStart) return;
+
+            if (cboFrequency.SelectedItem == null || cboFrequency.SelectedItem.ToString().Trim() == "")
+                dcmFrequency = 0M;
+            else
+            {
+                switch (cboFrequency.SelectedItem.ToString().Trim())
+                {
+                    case "100 Hz":
+                        dcmFrequency = 100M;
+                        break;
+                    case "120 Hz":
+                        dcmFrequency = 120M;
+                        break;
+                    case "1 kHz":
+                        dcmFrequency = 1000M;
+                        break;
+                    case "10 kHz":
+                        dcmFrequency = 10000M;
+                        break;
+                    case "100 kHz":
+                        dcmFrequency = 100000M;
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 전압레벨 Selelcted Index Changed Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cboVoltageLevel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (boolMeasurementStart) return;
+
+            if (cboFrequency.SelectedItem == null || cboFrequency.SelectedItem.ToString().Trim() == "")
+                dcmVoltageLevel = 1;
+            else
+            {
+                decimal dcmSelectVoltageLevel = Convert.ToDecimal(Regex.Replace(cboVoltageLevel.SelectedItem.ToString().Trim(), @"\D", ""));
+                dcmVoltageLevel = dcmSelectVoltageLevel / 1000M;
+            }
+        }
+
+        /// <summary>
+        /// 닫기 Button Evnet
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                btnClose.ForeColor = System.Drawing.Color.Blue;
+
+                if (!boolMeasurementStart)
+                    this.Close();
+                else
+                {
+                    frmMB.lblMessage.Text = "측정 중이므로 측정 종료 또는 정지 후 닫기하십시오.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+
+                btnClose.ForeColor = System.Drawing.Color.White;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 저장 Button Evnet
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Cursor.Current = Cursors.WaitCursor;
+
+            bool boolSave = false;
+            bool boolHeader = false;
+            bool boolDetail = false;
+
+            try
+            {
+                // 전력함 표시 선택 확인
+                if (strSelectPowerCabinet.Trim() == "")
+                {
+                    frmMB.lblMessage.Text = "선택된 전력함이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                // 그리드 행 확인
+                if (dgvMeasurement.RowCount <= 0)
+                {
+                    frmMB.lblMessage.Text = "저장할 데이터가 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                string strHogi = cboHogi.SelectedItem == null ? "" : cboHogi.SelectedItem.ToString().Trim();
+                string strOhDegree = lblOhDegree1.Text.Trim() + " " + teOhDegree2.Text.Trim() + " " + lblOhDegree3.Text.Trim();
+                string strPowerCabinet = strSelectPowerCabinet.Trim();
+
+                // 측정 데이터 Header Table 저장 처리
+                decimal dTemperature_ReferenceValue = teTemperature_ReferenceValue.Text.Trim() == "" ? 0.00M : Convert.ToDecimal(teTemperature_ReferenceValue.Text.Trim());
+                decimal dTemperatureUpDown_ReferenceValue = teTemperatureUpDown_ReferenceValue.Text.Trim() == "" ? 0.00M : Convert.ToDecimal(teTemperatureUpDown_ReferenceValue.Text.Trim());
+                string strFrequency = cboFrequency.SelectedItem == null ? "" : cboFrequency.SelectedItem.ToString().Trim();
+                string stVoltageLevel = cboVoltageLevel.SelectedItem == null ? "" : cboVoltageLevel.SelectedItem.ToString().Trim();
+                int intMeasurementCount = cboMeasurementCount.SelectedItem == null ? 0 : Convert.ToInt32(Regex.Replace(cboMeasurementCount.SelectedItem.ToString().Trim(), @"\D", ""));
+                
+                int intItem_Rdc = 0, intItem_Rac = 0, intItem_L = 0, intItem_C = 0, intItem_Q = 0;
+
+                if (chkRdc.Checked) intItem_Rdc = 0; else intItem_Rdc = 1;
+                if (chkRac.Checked) intItem_Rac = 0; else intItem_Rac = 1;
+                if (chkL.Checked) intItem_L = 0; else intItem_L = 1;
+                if (chkC.Checked) intItem_C = 0; else intItem_C = 1;
+                if (chkQ.Checked) intItem_Q = 0; else intItem_Q = 1;
+
+                string strMeasurementMode = rboNormalMode.Checked ? "일반모드" : "휘스톤모드";
+
+                for (int i = 0; i < dgvMeasurement.RowCount; i++)
+                {
+                    if (dgvMeasurement.Rows[i].Cells["Result"].Value.ToString().Trim() == "부적합"
+                        && (strMeasurementResult.Trim() == "" || strMeasurementResult.Trim() == "의심" || strMeasurementResult.Trim() == "적합"))
+                        strMeasurementResult = "부적합";
+                    else if (dgvMeasurement.Rows[i].Cells["Result"].Value.ToString().Trim() == "의심"
+                        && (strMeasurementResult.Trim() == "" || strMeasurementResult.Trim() == "적합"))
+                        strMeasurementResult = "의심";
+                    else if (dgvMeasurement.Rows[i].Cells["Result"].Value.ToString().Trim() == "적합" && strMeasurementResult.Trim() == "")
+                        strMeasurementResult = "적합";
+                }
+
+                // 제어봉 저장
+                //foreach (Control c in groupBox11.Controls)
+                //{
+                //    if (c.GetType().Name.Trim() == "Button" && (c.ForeColor == System.Drawing.Color.White || c.ForeColor == System.Drawing.Color.Red))
+                //    {
+                //        if ((m_db.GetRCSDiagnosisHeaderDataGridViewDataCount(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet, c.Text.Trim())) > 0)
+                //        {
+                //            // 기존 데이터 삭제
+                //            boolHeader = m_db.DeleteRCSDiagnosisHeaderDataGridViewDataInfo(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet, c.Text.Trim());
+                //        }
+
+                //        // 데이터 저상
+                //        boolHeader = m_db.InsertRCSDiagnosisHeaderDataGridViewDataInfo(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet
+                //            , c.Text.Trim(), dTemperature_ReferenceValue, dTemperatureUpDown_ReferenceValue, strFrequency, stVoltageLevel
+                //            , intMeasurementCount, intItem_Rdc, intItem_Rac, intItem_L, intItem_C, intItem_Q, strMeasurementMode, strMeasurementDate.Trim()
+                //            , strMeasurementResult.Trim());
+
+                //        c.ForeColor = System.Drawing.Color.Red;
+                //    }
+                //}
+                // 제어봉 저장
+                List<string> dignosisRod = rcsPanel.GetSelectedRodName();
+                foreach (string c in dignosisRod)
+                {
+                    if ((m_db.GetRCSDiagnosisHeaderDataGridViewDataCount(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet, c.Trim())) > 0)
+                    {
+                        // 기존 데이터 삭제
+                        boolHeader = m_db.DeleteRCSDiagnosisHeaderDataGridViewDataInfo(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet, c.Trim());
+                    }
+
+                    // 데이터 저상
+                    boolHeader = m_db.InsertRCSDiagnosisHeaderDataGridViewDataInfo(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet
+                        , c.Trim(), dTemperature_ReferenceValue, dTemperatureUpDown_ReferenceValue, strFrequency, stVoltageLevel
+                        , intMeasurementCount, intItem_Rdc, intItem_Rac, intItem_L, intItem_C, intItem_Q, strMeasurementMode, strMeasurementDate.Trim()
+                        , strMeasurementResult.Trim());
+                }
+
+                boolSave = boolHeader;
+
+                // 측정 데이터 Detail Table 저장 처리
+                string strControlName = "", strCoilName = "", strResult = "";
+                int intCoilNumber = 0, intSeqNumber = 0, intControlSeqNumber = 0;;
+                decimal dcmDC_ResistanceValue = 0.000M, dcmDC_Deviation = 0.000M, dcmAC_ResistanceValue = 0.000M, dcmAC_Deviation = 0.000M
+                    , dcmL_Inductace = 0.000M, dcmL_Deviation = 0.000M, dcmC_CapacitanceValue = 0.000M, dcmC_Deviation = 0.000M
+                    , dcmQ_FactorValue = 0.000M, dcmQ_Deviation = 0.000M;
+
+                for (int i = 0; i < dgvMeasurement.RowCount; i++)
+                {
+                    strControlName = dgvMeasurement.Rows[i].Cells["ControlName"].Value.ToString();
+                    strCoilName = dgvMeasurement.Rows[i].Cells["CoilName"].Value.ToString();
+                    intCoilNumber = dgvMeasurement.Rows[i].Cells["CoilNumber"].Value == null || dgvMeasurement.Rows[i].Cells["CoilNumber"].Value.ToString() == "" 
+                        || dgvMeasurement.Rows[i].Cells["CoilNumber"].Value.ToString() == "0" ? 1 : Convert.ToInt32(dgvMeasurement.Rows[i].Cells["CoilNumber"].Value.ToString());
+                    strResult = dgvMeasurement.Rows[i].Cells["Result"].Value.ToString();
+
+					// 코일명 순번 설정
+					if (strCoilName.Trim() == "정지")
+						intSeqNumber = 1;
+					else if (strCoilName.Trim() == "올림")
+						intSeqNumber = 2;
+					else if (strCoilName.Trim() == "이동")
+						intSeqNumber = 3;
+
+					// 제어봉 순번 가져오기
+					intControlSeqNumber = GetControlSeqNumber(strControlName);
+
+                    dcmDC_ResistanceValue = dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Value == null || dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Value.ToString());
+                    dcmDC_Deviation = dgvMeasurement.Rows[i].Cells["DC_Deviation"].Value == null || dgvMeasurement.Rows[i].Cells["DC_Deviation"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["DC_Deviation"].Value.ToString());
+                    dcmAC_ResistanceValue = dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Value == null || dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Value.ToString());
+                    dcmAC_Deviation = dgvMeasurement.Rows[i].Cells["AC_Deviation"].Value == null || dgvMeasurement.Rows[i].Cells["AC_Deviation"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["AC_Deviation"].Value.ToString());
+                    dcmL_Inductace = dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Value == null || dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Value.ToString());
+                    dcmL_Deviation = dgvMeasurement.Rows[i].Cells["L_Deviation"].Value == null || dgvMeasurement.Rows[i].Cells["L_Deviation"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["L_Deviation"].Value.ToString());
+                    dcmC_CapacitanceValue = dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Value == null || dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Value.ToString() == ""
+                        ? 0.000000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Value.ToString());
+                    dcmC_Deviation = dgvMeasurement.Rows[i].Cells["C_Deviation"].Value == null || dgvMeasurement.Rows[i].Cells["C_Deviation"].Value.ToString() == ""
+                        ? 0.000000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["C_Deviation"].Value.ToString());
+                    dcmQ_FactorValue = dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Value == null || dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Value.ToString());
+                    dcmQ_Deviation = dgvMeasurement.Rows[i].Cells["Q_Deviation"].Value == null || dgvMeasurement.Rows[i].Cells["Q_Deviation"].Value.ToString() == ""
+                        ? 0.000M : Convert.ToDecimal(dgvMeasurement.Rows[i].Cells["Q_Deviation"].Value.ToString());
+
+                    if ((m_db.GetRCSDiagnosisDetailDataGridViewDataCount(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet, strControlName, strCoilName, intCoilNumber)) > 0)
+                    {
+                        // 기존 데이터 삭제
+                        boolDetail = m_db.DeleteRCSDiagnosisDetailDataGridViewDataInfo(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet
+                            , strControlName, strCoilName, intCoilNumber);
+                    }
+
+                    // 데이터 저장
+                    boolDetail = m_db.InsertRCSDiagnosisDetailDataGridViewDataInfo(strPlantName.Trim(), strHogi, strOhDegree, strPowerCabinet
+                        , strControlName, strCoilName, intCoilNumber, dcmDC_ResistanceValue, dcmDC_Deviation, dcmAC_ResistanceValue, dcmAC_Deviation
+                        , dcmL_Inductace, dcmL_Deviation, dcmC_CapacitanceValue, dcmC_Deviation, dcmQ_FactorValue, dcmQ_Deviation, strResult
+						, strMeasurementDate, intSeqNumber, intControlSeqNumber);
+
+                    boolSave = boolDetail;
+                }
+
+                bool[] buttons;     // todo : fix -> to much call
+                buttons = SetButtonControlRodColor(Gini.GetValue("RCS", $"RCSPowerCabinetItem_{strSelectPowerCabinet}").Split(','));
+                rcsPanel.SetColorRodButton(buttons);
+
+                if (boolSave)
+                {
+                    frmMB.lblMessage.Text = "저장 완료";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+                else
+                {
+                    if (!boolHeader)
+                    {
+                        frmMB.lblMessage.Text = "Header Table 저장 중 실패";
+                        frmMB.TopMost = true;
+                        frmMB.ShowDialog();
+                    }
+                    else
+                    {
+                        frmMB.lblMessage.Text = "Detail Table 저장 중 실패";
+                        frmMB.TopMost = true;
+                        frmMB.ShowDialog();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                frmMB.lblMessage.Text = "저장 중 오류";
+                frmMB.TopMost = true;
+                frmMB.ShowDialog();
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+
+            System.Windows.Forms.Cursor.Current = Cursors.Default;
+        }
+
+		/// <summary>
+		/// 제어봉 순번 가져오기
+		/// </summary>
+		/// <param name="_strControlName"></param>
+		/// <returns></returns>
+		private int GetControlSeqNumber(string _strControlName)
+		{
+			int intControlSeqNumber = 0;
+
+            string[] cabinetName = Gini.GetValue("RCS", "RCSMeasurementGroup_Item").Split(',');
+            string[] rodName = { };
+            
+            for(int i = 0; i < cabinetName.Length; i++ )
+            {
+                //rodName.Concat( Gini.GetValue("RCS", $"RCSPowerCabinetItem_{cabinetName[i]}").Trim().Split(','));
+                rodName = Gini.GetValue("RCS", $"RCSPowerCabinetItem_{cabinetName[i]}").Trim().Split(',');
+                
+                for (int j = 0; j < rodName.Length ; j++)
+                {
+                    if (_strControlName == rodName[j])
+                    {
+                        return intControlSeqNumber + 1;
+                    }
+                    else intControlSeqNumber++;
+                }
+            }
+
+            return -1;  // not found 
+
+   //         switch (_strControlName.Trim())
+			//{
+			//	case "F2":
+			//		intControlSeqNumber = 1;
+			//		break;
+			//	case "B10":
+			//		intControlSeqNumber = 2;
+			//		break;
+			//	case "K14":
+			//		intControlSeqNumber = 3;
+			//		break;
+			//	case "P6":
+			//		intControlSeqNumber = 4;
+			//		break;
+			//	case "D4":
+			//		intControlSeqNumber = 5;
+			//		break;
+			//	case "D12":
+			//		intControlSeqNumber = 6;
+			//		break;
+			//	case "M12":
+			//		intControlSeqNumber = 7;
+			//		break;
+			//	case "M4":
+			//		intControlSeqNumber = 8;
+			//		break;
+			//	case "G3":
+			//		intControlSeqNumber = 9;
+			//		break;
+			//	case "C9":
+			//		intControlSeqNumber = 10;
+			//		break;
+			//	case "J13":
+			//		intControlSeqNumber = 11;
+			//		break;
+			//	case "N7":
+			//		intControlSeqNumber = 12;
+			//		break;
+			//	case "K2":
+			//		intControlSeqNumber = 13;
+			//		break;
+			//	case "B6":
+			//		intControlSeqNumber = 14;
+			//		break;
+			//	case "F14":
+			//		intControlSeqNumber = 15;
+			//		break;
+			//	case "P10":
+			//		intControlSeqNumber = 16;
+			//		break;
+			//	case "H6":
+			//		intControlSeqNumber = 17;
+			//		break;
+			//	case "F8":
+			//		intControlSeqNumber = 18;
+			//		break;
+			//	case "H10":
+			//		intControlSeqNumber = 19;
+			//		break;
+			//	case "K8":
+			//		intControlSeqNumber = 20;
+			//		break;
+			//	case "J3":
+			//		intControlSeqNumber = 21;
+			//		break;
+			//	case "C7":
+			//		intControlSeqNumber = 22;
+			//		break;
+			//	case "G13":
+			//		intControlSeqNumber = 23;
+			//		break;
+			//	case "N9":
+			//		intControlSeqNumber = 24;
+			//		break;
+			//	case "F4":
+			//		intControlSeqNumber = 25;
+			//		break;
+			//	case "D10":
+			//		intControlSeqNumber = 26;
+			//		break;
+			//	case "K12":
+			//		intControlSeqNumber = 27;
+			//		break;
+			//	case "M6":
+			//		intControlSeqNumber = 28;
+			//		break;
+			//	case "H2":
+			//		intControlSeqNumber = 29;
+			//		break;
+			//	case "H14":
+			//		intControlSeqNumber = 30;
+			//		break;
+			//	case "E5":
+			//		intControlSeqNumber = 31;
+			//		break;
+			//	case "E11":
+			//		intControlSeqNumber = 32;
+			//		break;
+			//	case "L11":
+			//		intControlSeqNumber = 33;
+			//		break;
+			//	case "L5":
+			//		intControlSeqNumber = 34;
+			//		break;
+			//	case "K4":
+			//		intControlSeqNumber = 35;
+			//		break;
+			//	case "D6":
+			//		intControlSeqNumber = 36;
+			//		break;
+			//	case "F12":
+			//		intControlSeqNumber = 37;
+			//		break;
+			//	case "M10":
+			//		intControlSeqNumber = 38;
+			//		break;
+			//	case "B8":
+			//		intControlSeqNumber = 39;
+			//		break;
+			//	case "P8":
+			//		intControlSeqNumber = 40;
+			//		break;
+			//	case "G7":
+			//		intControlSeqNumber = 41;
+			//		break;
+			//	case "G9":
+			//		intControlSeqNumber = 42;
+			//		break;
+			//	case "J9":
+			//		intControlSeqNumber = 43;
+			//		break;
+			//	case "J7":
+			//		intControlSeqNumber = 44;
+			//		break;
+   //             case "E3":
+			//		intControlSeqNumber = 45;
+			//		break;
+   //             case "C11":
+			//		intControlSeqNumber = 46;
+			//		break;
+   //             case "L13":
+			//		intControlSeqNumber = 47;
+			//		break;
+   //             case "N5":
+			//		intControlSeqNumber = 48;
+			//		break;
+   //             case "F6":
+			//		intControlSeqNumber = 49;
+			//		break;
+   //             case "F10":
+			//		intControlSeqNumber = 50;
+			//		break;
+   //             case "K10":
+			//		intControlSeqNumber = 51;
+			//		break;
+   //             case "K6":
+   //                 intControlSeqNumber = 52;
+   //                 break;
+			//}
+
+			//return intControlSeqNumber;
+		}
+
+        /// <summary>
+        /// 정지 Button Evnet
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnMeasurementStop_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!boolMeasurementStart)
+                {
+                    frmMB.lblMessage.Text = "측정 중이 아닙니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                boolMeasurementStop = true;
+
+                threadMeasurementStop = new Thread(new ThreadStart(threadStopTesterMeasurment));
+                threadMeasurementStop.Start();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 측정 정지 
+        /// </summary>
+        private void threadStopTesterMeasurment()
+        {
+            try
+            {
+                while (boolMeasurementStart)
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+            finally
+            {
+                boolMeasurementStop = false;
+
+                if (threadMeasurementStop != null)
+                    threadMeasurementStop.Abort();
+            }
+        }
+
+        /// <summary>
+        /// 측정 Button Evnet
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnMeasurementStart_Click(object sender, EventArgs e)
+        {
+            if (boolMeasurementStart) return;
+
+            try
+            {
+                // DAQ 핀 초기화
+                m_MeasureProcess.DigitalDAQ_CloseChannel();
+
+                // 측정 대상 호기 체크
+                if (cboHogi.Items.Count <= 0 || cboHogi.SelectedItem == null)
+                {
+                    frmMB.lblMessage.Text = "호기를 선택하십시오.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                // 측정 대상 차수 체크
+                if (teOhDegree2.Text.Trim() == "")
+                {
+                    frmMB.lblMessage.Text = "차수를 입력하십시오.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                // 측정 대상 항목 체크
+                if (dgvMeasurement.RowCount <= 0)
+                {
+                    frmMB.lblMessage.Text = "측정할 대상이 없습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                    return;
+                }
+
+                //측정 시작 중단에 따라 버튼 활성화/비활성화 설정
+                SetMeasurementStartButtonEnabled(false);
+
+                // 카드 선택 버튼 비활성화 설정
+                btnSelectCard.Enabled = false;
+
+                // 측정 시 Control 활성화/비활성화 설정 
+                SetControlEnabled(false);
+
+                // 그리드에 DAM와 Channel 설정
+                SetDataGridViewCellsDMMChannel();
+
+                // 측정 일시
+                strMeasurementDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                boolMeasurementStop = false;
+                boolMeasurementStart = true;
+                                
+                // 일반모드 선택된 OI Card 측정 Thread 시작 
+                threadMeasurementStart = new Thread(new ThreadStart(threadStartTesterMeasurment));
+                threadMeasurementStart.Start();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 측정 시 Control 활성화/비활성화 설정 
+        /// </summary>
+        /// <param name="_boolEnabled"></param>
+        private void SetControlEnabled(bool _boolEnabled)
+        {
+            cboHogi.Enabled = _boolEnabled;
+            teOhDegree2.Enabled = _boolEnabled;
+            //cboFrequency.Enabled = _boolEnabled;
+            cboVoltageLevel.Enabled = _boolEnabled;
+            cboMeasurementCount.Enabled = _boolEnabled;
+
+            teTemperature_ReferenceValue.Enabled = _boolEnabled;
+            teTemperatureUpDown_ReferenceValue.Enabled = _boolEnabled;
+
+            rboNormalMode.Enabled = _boolEnabled;
+            rboWheatstoneMode.Enabled = _boolEnabled;
+
+            chkRdc.Enabled = _boolEnabled;
+            chkRac.Enabled = _boolEnabled;
+            chkL.Enabled = _boolEnabled;
+            chkC.Enabled = _boolEnabled;
+            chkQ.Enabled = _boolEnabled;
+        }
+
+        /// <summary>
+        /// 그리드에 DAM와 Channel 설정
+        /// </summary>
+        private void SetDataGridViewCellsDMMChannel()
+        {
+            int intDAMCount = 1, intChannelPinMapCount = 0;
+            string strCoilName = "", strChannelPinMap = "";
+
+            for (int i = 0; i < dgvMeasurement.RowCount; i++)
+            {
+                strChannelPinMap = "";
+
+                if (strCoilName.Trim() != dgvMeasurement.Rows[i].Cells["CoilName"].Value.ToString().Trim())
+                {
+                    if (intChannelPinMapCount >= 6)
+                    {
+                        intChannelPinMapCount = 1;
+                        intDAMCount++;
+                    }
+                    else
+                    {
+                        intChannelPinMapCount++;
+                    }
+
+                    if (boolNormalMode)
+                    {
+                        dgvMeasurement.Rows[i].Cells["DAMName"].Value = Gini.GetValue("RCS", $"RCSNormalMode_SelectDAMRelay{intDAMCount}").Trim();
+
+                        if (intDAMCount == 1)
+                            strChannelPinMap = arrayCard01_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 2)
+                            strChannelPinMap = arrayCard02_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 3)
+                            strChannelPinMap = arrayCard03_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 4)
+                            strChannelPinMap = arrayCard04_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 5)
+                            strChannelPinMap = arrayCard05_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 6)
+                            strChannelPinMap = arrayCard06_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                    }
+                    else
+                    {
+                        dgvMeasurement.Rows[i].Cells["DAMName"].Value = Gini.GetValue("RCS", $"RCSWheatstoneMode_SelectDAMRelay{intDAMCount}").Trim();
+
+                        if (intDAMCount == 1)
+                            strChannelPinMap = arrayCard01_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 2)
+                            strChannelPinMap = arrayCard02_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 3)
+                            strChannelPinMap = arrayCard03_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 4)
+                            strChannelPinMap = arrayCard04_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 5)
+                            strChannelPinMap = arrayCard05_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 6)
+                            strChannelPinMap = arrayCard06_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                    }
+
+                    strCoilName = dgvMeasurement.Rows[i].Cells["CoilName"].Value.ToString().Trim();
+                }
+                else
+                {
+                    if (boolNormalMode)
+                    {
+                        dgvMeasurement.Rows[i].Cells["DAMName"].Value = Gini.GetValue("RCS", $"RCSNormalMode_SelectDAMRelay{intDAMCount}").Trim();
+
+                        if (intDAMCount == 1)
+                            strChannelPinMap = arrayCard01_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 2)
+                            strChannelPinMap = arrayCard02_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 3)
+                            strChannelPinMap = arrayCard03_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 4)
+                            strChannelPinMap = arrayCard04_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 5)
+                            strChannelPinMap = arrayCard05_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 6)
+                            strChannelPinMap = arrayCard06_NormalModePinMap[intChannelPinMapCount - 1].Trim();
+                    }
+                    else
+                    {
+                        dgvMeasurement.Rows[i].Cells["DAMName"].Value = Gini.GetValue("RCS", $"RCSWheatstoneMode_SelectDAMRelay{intDAMCount}").Trim();
+
+                        if (intDAMCount == 1)
+                            strChannelPinMap = arrayCard01_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 2)
+                            strChannelPinMap = arrayCard02_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 3)
+                            strChannelPinMap = arrayCard03_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 4)
+                            strChannelPinMap = arrayCard04_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 5)
+                            strChannelPinMap = arrayCard05_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                        else if (intDAMCount == 6)
+                            strChannelPinMap = arrayCard06_WheatstoneModePinMap[intChannelPinMapCount - 1].Trim();
+                    }
+                }
+
+                dgvMeasurement.Rows[i].Cells["Channel"].Value = string.Format("Ch{0}", intChannelPinMapCount);
+                dgvMeasurement.Rows[i].Cells["DAQPinMap"].Value = strChannelPinMap;
+            }
+        }
+
+        /// <summary>
+        /// 일반/휘스톤 모드 선택된 OI Card 측정 Thread 시작 
+        /// </summary>
+        public void threadStartTesterMeasurment()
+        {
+            bool boolResult = false;
+
+            strDAQDeviceName = Gini.GetValue("Device", "DAQDeviceName").Trim();
+            m_MeasureProcess.DigitalDAQ_CloseChannel();
+
+            try
+            {
+                string strMeasurementMode = rboNormalMode.Checked ? "일반모드" : "휘스톤모드";
+
+                decimal dcmMeasurementValue = 0M, dcmRefValue = 0M;
+                string strControlName = "", strCoilName = "", strNormalModeDAQPinMap = "", strWheatstoneModeDAQPinMap = "", strDAQPinMap = ""
+                    , strDAMRelayName = "", strChannelName = "", strRdcResult = "", strRacResult = "", strLResult = "", strCResult = "", strQResult = "";
+                int intCoilNumber = 0, intSleep = 300;
+
+                decimal dcmDecisionRange_Rdc = 0M, dcmDecisionRange_Rac = 0M, dcmDecisionRange_L = 0M, dcmDecisionRange_C = 0M
+                    , dcmDecisionRange_Q = 0M, dcmEffectiveStandardRange = 0M;
+                dcmDecisionRange_Rdc = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "RdcDecisionRange_ReferenceValue"));
+                dcmDecisionRange_Rac = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "RacDecisionRange_ReferenceValue"));
+                dcmDecisionRange_L = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "LDecisionRange_ReferenceValue"));
+                dcmDecisionRange_C = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "CDecisionRange_ReferenceValue"));
+                dcmDecisionRange_Q = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "QDecisionRange_ReferenceValue"));
+                dcmEffectiveStandardRange = Convert.ToDecimal(Gini.GetValue("ReferenceValue", "EffectiveStandardRangeOfVariation"));
+
+                decimal dcmDC_Resistance = 0M, dcmAC_Resistance = 0M, dcmL_Resistance = 0M, dcmC_Resistance = 0M
+                    , dcmAC_MeasurementValue = 0M, dcmL_MeasurementValue = 0M;
+
+                // LCR-Meter Range 설정
+                m_MeasureProcess.functionLCRMeterRangeSetting(Function.FunctionLCRMeterinfo.intLCRMeer_RangeValue);
+
+                // LCR-Meter 주파수 설정
+                m_MeasureProcess.functionLCRMeterFrequencySetting(dcmFrequency);
+
+                // LCR-Meter VoltageLevel 설정
+                m_MeasureProcess.functionLCRMeterVoltageLevelSetting(dcmVoltageLevel);
+
+                // LCR-Meter Mode 설정
+                m_MeasureProcess.functionLCRMeterModeSetting(2);
+
+                // 그리드의 행별 측정 진행
+                for (int i = 0; i < dgvMeasurement.RowCount; i++)
+                {
+                    // DataGridView Select 컬럼의 체크박스 상태에 따라 측정 진행
+                    if (!(bool)dgvMeasurement.Rows[i].Cells["Select"].Value) continue;
+
+                    strControlName = dgvMeasurement.Rows[i].Cells["ControlName"].Value.ToString().Trim();
+                    strCoilName = dgvMeasurement.Rows[i].Cells["CoilName"].Value.ToString().Trim();
+                    intCoilNumber = dgvMeasurement.Rows[i].Cells["CoilNumber"].Value == null || dgvMeasurement.Rows[i].Cells["CoilNumber"].Value.ToString().Trim() == ""
+                        ? 0 : Convert.ToInt32(dgvMeasurement.Rows[i].Cells["CoilNumber"].Value.ToString().Trim());
+                    strDAMRelayName = dgvMeasurement.Rows[i].Cells["DAMName"].Value == null ? "" : dgvMeasurement.Rows[i].Cells["DAMName"].Value.ToString().Trim();
+                    strChannelName = dgvMeasurement.Rows[i].Cells["Channel"].Value == null ? "" : dgvMeasurement.Rows[i].Cells["Channel"].Value.ToString().Trim();
+                    dcmAC_MeasurementValue = 0M;
+                    dcmL_MeasurementValue = 0M;
+                    dgvMeasurement.Rows[i].Cells["Result"].Value = "";
+
+                    if (strSelectPowerCabinet.Trim() == "" || strControlName.Trim() == "" || strCoilName.Trim() == "") continue;
+
+                    // Channel 별로 DAQ Pin 번호 가져오기
+                    strDAQPinMap = dgvMeasurement.Rows[i].Cells["DAQPinMap"].Value == null ? "" : dgvMeasurement.Rows[i].Cells["DAQPinMap"].Value.ToString().Trim();
+
+                    if (strMeasurementMode.Trim() == "일반모드")
+                    {
+                        strWheatstoneModeDAQPinMap = strDAQPinMap;
+                        strNormalModeDAQPinMap = strDAQPinMap;
+                    }
+                    else
+                    {
+                        strWheatstoneModeDAQPinMap = strDAQPinMap;
+                        string[] arrayDAQPinMap = strDAQPinMap.Split(',');
+
+                        strNormalModeDAQPinMap = arrayDAQPinMap[0] + "," + arrayDAQPinMap[1] + "," + arrayDAQPinMap[2] + "," + arrayDAQPinMap[3];
+                    }
+
+                    // 영점보정 값 가져오기
+                    DataTable dt = new DataTable();
+                    dt = m_db.GetSetOffsetDataGridViewDataInfo(strPlantName, strMeasurementMode, strDAMRelayName, strChannelName);
+
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        dcmDC_Resistance = dt.Rows[0]["DC_Resistance"] == null || dt.Rows[0]["DC_Resistance"].ToString().Trim() == "" ? 0.000M : Convert.ToDecimal(dt.Rows[0]["DC_Resistance"].ToString().Trim());
+                        dcmAC_Resistance = dt.Rows[0]["AC_Resistance"] == null || dt.Rows[0]["AC_Resistance"].ToString().Trim() == "" ? 0.000M : Convert.ToDecimal(dt.Rows[0]["AC_Resistance"].ToString().Trim());
+                        dcmL_Resistance = dt.Rows[0]["Inductance"] == null || dt.Rows[0]["Inductance"].ToString().Trim() == "" ? 0.000M : Convert.ToDecimal(dt.Rows[0]["Inductance"].ToString().Trim());
+                        dcmC_Resistance = dt.Rows[0]["Capacitance"] == null || dt.Rows[0]["Capacitance"].ToString().Trim() == "" ? 0.000M : Convert.ToDecimal(dt.Rows[0]["Capacitance"].ToString().Trim());
+                    }
+                    else
+                    {
+                        dcmDC_Resistance = 0.000M;
+                        dcmAC_Resistance = 0.000M;
+                        dcmL_Resistance = 0.000M;
+                        dcmC_Resistance = 0.000000M;
+                    }
+
+                    // DAQ 핀 On
+                    boolResult = m_MeasureProcess.functionDAQPinMapOnOff(strWheatstoneModeDAQPinMap, true);
+                    Thread.Sleep(50);
+
+                    // 측정이 정지되었을 경우
+                    if (boolMeasurementStop || !boolMeasurementStart) break;
+
+                    // DC 측정
+                    if (chkRdc.Checked)
+                    {
+                        #region DC 측정
+
+                        // 컬럼 선택
+                        dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Selected = true;
+
+                        // DC 데이터 측정값 가져오기
+                        boolResult = m_MeasureProcess.functionRCSRdcMeasurement(ref dcmMeasurementValue, rboWheatstoneMode.Checked, intSleep);
+                        intSleep = 100;
+
+                        // 영점 보정 
+                        dcmMeasurementValue = dcmMeasurementValue - dcmDC_Resistance;
+                        
+                        // 기준값과 비교 및 편차 산출
+                        if (strCoilName.Trim() == "정지")
+                        {
+                            dcmRefValue = teRdcStop_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teRdcStop_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "올림")
+                        {
+                            dcmRefValue = teRdcUp_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teRdcUp_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "이동")
+                        {
+                            dcmRefValue = teRdcMove_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teRdcMove_RCSReferenceValue.Text.Trim());
+                        }
+
+                        if (rboWheatstoneMode.Checked)
+                        {
+                            // 선간 보정 
+                            decimal dcmWheatstoneMode_Compensation = Convert.ToDecimal(Gini.GetValue("Wheatstone", "WheatstoneMode_Compensation"));
+                            dcmMeasurementValue = dcmMeasurementValue + (dcmWheatstoneMode_Compensation * System.Math.Truncate(dcmMeasurementValue));
+                        }
+
+                        // 온도와 온도 증감 값 적용
+                        if (dcmTemperature_ReferenceValue > 0)
+                        {
+                            if (dcmTemperature_ReferenceValue < dcmTemperature_ChangeValue)
+                                dcmMeasurementValue = dcmMeasurementValue + dcmTemperature_Measurement;
+                            else if (dcmTemperature_ReferenceValue > dcmTemperature_ChangeValue)
+                                dcmMeasurementValue = dcmMeasurementValue - dcmTemperature_Measurement;
+                        }
+
+                        // 그리드에 측정 값 삽입
+                        dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Value = dcmMeasurementValue.ToString("F3");
+                        dgvMeasurement.Rows[i].Cells["DC_Deviation"].Value = (dcmMeasurementValue - dcmRefValue).ToString("F3");
+
+                        // 결과 체크
+                        strRdcResult = m_MeasureProcess.GetMesurmentValueDecision(dcmMeasurementValue, dcmRefValue, dcmDecisionRange_Rdc, dcmEffectiveStandardRange, "DC");
+
+                        if ((dcmMeasurementValue - dcmRefValue) == 0)
+                            dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                        else
+                        {
+                            if (strRdcResult.Trim() == "부적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Red;
+                            }
+                            else if (strRdcResult.Trim() == "의심")
+                            {
+                                dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Blue;
+                            }
+                            else if (strRdcResult.Trim() == "적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                            }
+                        }
+
+                        // 컬럼 선택 취소
+                        dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Selected = false;
+                        #endregion
+                    }
+
+                    // DAQ 핀 Off
+                    boolResult = m_MeasureProcess.functionDAQPinMapOnOff(strWheatstoneModeDAQPinMap, false);
+                    Thread.Sleep(50);
+
+                    // 측정이 정지되었을 경우
+                    if (boolMeasurementStop || !boolMeasurementStart) break;
+
+                    // DAQ 핀 On
+                    boolResult = m_MeasureProcess.functionDAQPinMapOnOff(strNormalModeDAQPinMap, true);
+                    Thread.Sleep(50);
+
+                    // AC 측정
+                    if (chkRac.Checked)
+                    {
+                        #region AC 측정
+                        // 컬럼 선택
+                        dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Selected = true;
+
+                        // AC 데이터 측정값 가져오기
+                        boolResult = m_MeasureProcess.functionRCSRacMeasurement(ref dcmMeasurementValue);
+                        dcmAC_MeasurementValue = dcmMeasurementValue;
+
+                        // 영점 보정 
+                        dcmMeasurementValue = dcmMeasurementValue - dcmAC_Resistance;
+                        //dcmAC_MeasurementValue = dcmMeasurementValue;
+
+                        // 기준값과 비교 및 편차 산출
+                        if (strCoilName.Trim() == "정지")
+                        {
+                            dcmRefValue = teRacStop_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teRacStop_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "올림")
+                        {
+                            dcmRefValue = teRacUp_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teRacUp_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "이동")
+                        {
+                            dcmRefValue = teRacMove_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teRacMove_RCSReferenceValue.Text.Trim());
+                        }
+
+                        // 온도와 온도 증감 값 적용
+                        if (dcmTemperature_ReferenceValue > 0)
+                        {
+                            if (dcmTemperature_ReferenceValue < dcmTemperature_ChangeValue)
+                                dcmMeasurementValue = dcmMeasurementValue + dcmTemperature_Measurement;
+                            else if (dcmTemperature_ReferenceValue > dcmTemperature_ChangeValue)
+                                dcmMeasurementValue = dcmMeasurementValue - dcmTemperature_Measurement;
+                        }
+
+                        // 그리드에 측정 값 삽입
+                        dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Value = dcmMeasurementValue.ToString("F3");
+                        dgvMeasurement.Rows[i].Cells["AC_Deviation"].Value = (dcmMeasurementValue - dcmRefValue).ToString("F3");
+
+                        // 결과 체크
+                        strRacResult = m_MeasureProcess.GetMesurmentValueDecision(dcmMeasurementValue, dcmRefValue, dcmDecisionRange_Rac, dcmEffectiveStandardRange, "AC");
+
+                        if ((dcmMeasurementValue - dcmRefValue) == 0)
+                            dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                        else
+                        {
+                            if (strRacResult.Trim() == "부적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Red;
+                            }
+                            else if (strRacResult.Trim() == "의심")
+                            {
+                                dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Blue;
+                            }
+                            else if (strRacResult.Trim() == "적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                            }
+                        }
+
+                        // 컬럼 선택 취소
+                        dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Selected = false;
+                        #endregion
+                    }
+
+                    // 측정이 정지되었을 경우
+                    if (boolMeasurementStop || !boolMeasurementStart) break;                    
+
+                    // L 측정
+                    if (chkL.Checked)
+                    {
+                        #region L 측정
+                        // 컬럼 선택
+                        dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Selected = true;
+
+                        // L 데이터 측정값 가져오기
+                        boolResult = m_MeasureProcess.functionRCSLMeasurement(ref dcmMeasurementValue);
+
+                        // 영점 보정 
+                        dcmMeasurementValue = dcmMeasurementValue - dcmL_Resistance;
+
+                        // 기준값과 비교 및 편차 산출
+                        if (strCoilName.Trim() == "정지")
+                        {
+                            dcmRefValue = teLStop_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teLStop_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "올림")
+                        {
+                            dcmRefValue = teLUp_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teLUp_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "이동")
+                        {
+                            dcmRefValue = teLMove_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teLMove_RCSReferenceValue.Text.Trim());
+                        }
+
+                        // 그리드에 측정 값 삽입
+                        dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Value = dcmMeasurementValue.ToString("F3");
+                        dgvMeasurement.Rows[i].Cells["L_Deviation"].Value = (dcmMeasurementValue - dcmRefValue).ToString("F3");
+                        dcmL_MeasurementValue = dcmMeasurementValue;
+
+                        // 결과 체크
+                        strLResult = m_MeasureProcess.GetMesurmentValueDecision(dcmMeasurementValue, dcmRefValue, dcmDecisionRange_L, dcmEffectiveStandardRange, "L");
+
+                        if ((dcmMeasurementValue - dcmRefValue) == 0)
+                            dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                        else
+                        {
+                            if (strLResult.Trim() == "부적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Style.ForeColor = System.Drawing.Color.Red;
+                            }
+                            else if (strLResult.Trim() == "의심")
+                            {
+                                dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Style.ForeColor = System.Drawing.Color.Blue;
+                            }
+                            else if (strLResult.Trim() == "적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                            }
+                        }
+
+                        // 컬럼 선택 취소
+                        dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Selected = false;
+                        #endregion
+                    }
+
+                    // 측정이 정지되었을 경우
+                    if (boolMeasurementStop || !boolMeasurementStart) break;                    
+
+                    // C 측정
+                    if (chkC.Checked)
+                    {
+                        #region C 측정
+                        // 컬럼 선택
+                        dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Selected = true;
+
+                        // C 데이터 측정값 가져오기
+                        boolResult = m_MeasureProcess.functionRCSCMeasurement(ref dcmMeasurementValue);
+
+                        // 영점 보정 
+                        dcmMeasurementValue = dcmMeasurementValue - dcmC_Resistance;
+
+                        // 기준값과 비교 및 편차 산출
+                        if (strCoilName.Trim() == "정지")
+                        {
+                            dcmRefValue = teCStop_RCSReferenceValue.Text.Trim() == "" ? 0.000000M : Convert.ToDecimal(teRacStop_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "올림")
+                        {
+                            dcmRefValue = teCUp_RCSReferenceValue.Text.Trim() == "" ? 0.000000M : Convert.ToDecimal(teRacUp_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "이동")
+                        {
+                            dcmRefValue = teCMove_RCSReferenceValue.Text.Trim() == "" ? 0.000000M : Convert.ToDecimal(teRacMove_RCSReferenceValue.Text.Trim());
+                        }
+
+                        // 그리드에 측정 값 삽입
+                        dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Value = dcmMeasurementValue.ToString("F6");
+                        dgvMeasurement.Rows[i].Cells["C_Deviation"].Value = (dcmMeasurementValue - dcmRefValue).ToString("F6");
+
+                        // 결과 체크
+                        strCResult = m_MeasureProcess.GetMesurmentValueDecision(dcmMeasurementValue, dcmRefValue, dcmDecisionRange_C, dcmEffectiveStandardRange, "C");
+
+                        if ((dcmMeasurementValue - dcmRefValue) == 0)
+                            dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                        else
+                        {
+                            if (strCResult.Trim() == "부적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Style.ForeColor = System.Drawing.Color.Red;
+                            }
+                            else if (strCResult.Trim() == "의심")
+                            {
+                                dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Style.ForeColor = System.Drawing.Color.Blue;
+                            }
+                            else if (strCResult.Trim() == "적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Style.ForeColor = System.Drawing.Color.Black;
+                            }
+                        }
+
+                        // 컬럼 선택 취소
+                        dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Selected = false;
+                        #endregion
+                    }
+
+                    // 측정이 정지되었을 경우
+                    if (boolMeasurementStop || !boolMeasurementStart) break;                    
+
+                    // Q 측정
+                    if (chkQ.Checked)
+                    {
+                        #region Q 측정
+                        // 컬럼 선택
+                        dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Selected = true;
+
+                        // Q 데이터 측정값 가져오기
+                        //boolResult = m_MeasureProcess.functionRCSQMeasurement(ref dcmMeasurementValue);
+                        if (!chkL.Checked || dcmL_MeasurementValue == 0M || dcmAC_MeasurementValue == 0M)
+                            dcmMeasurementValue = 0.000M;
+                        else
+                            dcmMeasurementValue = (2M * 3.141592M * dcmFrequency * (dcmL_MeasurementValue / 1000)) / dcmAC_MeasurementValue;
+
+                        // 기준값과 비교 및 편차 산출
+                        if (strCoilName.Trim() == "정지")
+                        {
+                            dcmRefValue = teQStop_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teQStop_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "올림")
+                        {
+                            dcmRefValue = teQUp_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teQUp_RCSReferenceValue.Text.Trim());
+                        }
+                        else if (strCoilName.Trim() == "이동")
+                        {
+                            dcmRefValue = teQMove_RCSReferenceValue.Text.Trim() == "" ? 0.000M : Convert.ToDecimal(teQMove_RCSReferenceValue.Text.Trim());
+                        }
+
+                        // 그리드에 측정 값 삽입
+                        dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Value = dcmMeasurementValue.ToString("F3");
+                        dgvMeasurement.Rows[i].Cells["Q_Deviation"].Value = (dcmMeasurementValue - dcmRefValue).ToString("F3");
+
+                        // 결과 체크
+                        strQResult = m_MeasureProcess.GetMesurmentValueDecision(dcmMeasurementValue, dcmRefValue, dcmDecisionRange_Q, dcmEffectiveStandardRange, "Q");
+
+                        if ((dcmMeasurementValue - dcmRefValue) == 0)
+                            dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Style.ForeColor = System.Drawing.Color.Black;
+                        else
+                        {
+                            if (strQResult.Trim() == "부적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Style.ForeColor = System.Drawing.Color.Red;
+                            }
+                            else if (strQResult.Trim() == "의심")
+                            {
+                                dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Style.ForeColor = System.Drawing.Color.Blue;
+                            }
+                            else if (strQResult.Trim() == "적합")
+                            {
+                                dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Style.ForeColor = System.Drawing.Color.Black;
+                            }
+                        }
+
+                        // 컬럼 선택 취소
+                        dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Selected = false;
+                        #endregion
+                    }
+
+                    if (dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Style.ForeColor == System.Drawing.Color.Red
+                        || dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Style.ForeColor == System.Drawing.Color.Red
+                        || dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Style.ForeColor == System.Drawing.Color.Red
+                        || dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Style.ForeColor == System.Drawing.Color.Red
+                        || dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Style.ForeColor == System.Drawing.Color.Red)
+                    {
+                        dgvMeasurement.Rows[i].Cells["Result"].Value = "부적합";
+                        dgvMeasurement.Rows[i].Cells["Result"].Style.ForeColor = System.Drawing.Color.Red;
+                    }
+                    else if (dgvMeasurement.Rows[i].Cells["DC_ResistanceValue"].Style.ForeColor == System.Drawing.Color.Blue
+                        || dgvMeasurement.Rows[i].Cells["AC_ResistanceValue"].Style.ForeColor == System.Drawing.Color.Blue
+                        || dgvMeasurement.Rows[i].Cells["L_InductanceValue"].Style.ForeColor == System.Drawing.Color.Blue
+                        || dgvMeasurement.Rows[i].Cells["C_CapacitanceValue"].Style.ForeColor == System.Drawing.Color.Blue
+                        || dgvMeasurement.Rows[i].Cells["Q_FactorValue"].Style.ForeColor == System.Drawing.Color.Blue)
+                    {
+                        dgvMeasurement.Rows[i].Cells["Result"].Value = "의심";
+                        dgvMeasurement.Rows[i].Cells["Result"].Style.ForeColor = System.Drawing.Color.Blue;
+                    }
+                    else
+                    {
+                        dgvMeasurement.Rows[i].Cells["Result"].Value = "적합";
+                        dgvMeasurement.Rows[i].Cells["Result"].Style.ForeColor = System.Drawing.Color.Black;
+                    }
+
+                    // DAQ 핀 Off
+                    boolResult = m_MeasureProcess.functionDAQPinMapOnOff(strNormalModeDAQPinMap, false);
+                    Thread.Sleep(50);
+                }
+            }
+            catch (Exception ex)
+            {
+                frmMB.TopMost = true;
+                frmMB.lblMessage.Text = "측정 오류";
+                frmMB.ShowDialog();
+                boolResult = false;
+                System.Diagnostics.Debug.Print(ex.Message);
+            }
+            finally
+            {
+                // DAQ 핀 초기화
+                m_MeasureProcess.DigitalDAQ_CloseChannel();
+
+                btnMeasurementStart.Cursor = System.Windows.Forms.Cursors.Hand;
+                btnMeasurementStop.Cursor = System.Windows.Forms.Cursors.Default;
+                btnSave.Cursor = System.Windows.Forms.Cursors.Hand;
+
+                if (boolMeasurementStop)
+                {
+                    frmMB.lblMessage.Text = "측정을 중단하였습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+                else if (!boolResult)
+                {
+                    frmMB.lblMessage.Text = "측정이 실패하였습니다.";
+                    frmMB.TopMost = true;
+                    frmMB.ShowDialog();
+                }
+                else
+                {
+                    btnMeasurementStop.Enabled = false;
+                    btnClose.Enabled = false;
+
+                    frmWorkMessageBox frmMessage = new frmWorkMessageBox();
+                    frmMessage.lblMessage.Text = "측정이 완료되었습니다.\r\n저장하시겠습니까?";
+                    frmMessage.ShowDialog();
+
+                    if (frmMessage.boolOk)
+                    {
+                        btnSave_Click(null, null);
+                    }
+
+                    btnMeasurementStop.Enabled = true;
+                    btnClose.Enabled = true;
+                }
+                
+                boolMeasurementStart = false;
+
+                //측정 시작 중단에 따라 버튼 활성화/비활성화 설정
+                SetMeasurementStartButtonEnabled(true);
+
+                // 카드 선택 버튼 활성화 설정
+                btnSelectCard.Enabled = true;
+
+                // 측정 시 Control 활성화/비활성화 설정 
+                SetControlEnabled(true);
+
+                if (threadMeasurementStart != null)
+                    threadMeasurementStart.Abort();
+            }
+        }
+
+        /// <summary>
+        /// 측정 시작 중단에 따라 버튼 활성화/비활성화 설정
+        /// </summary>
+        /// <param name="boolEnabled"></param>
+        public void SetMeasurementStartButtonEnabled(bool boolEnabled)
+        {
+            btnMeasurementStart.Enabled = boolEnabled;
+            btnMeasurementStop.Enabled = !boolEnabled;
+            btnSave.Enabled = boolEnabled;
+
+            if (boolEnabled)
+            {
+                btnMeasurementStart.ForeColor = System.Drawing.Color.White;
+                btnSave.ForeColor = System.Drawing.Color.White;
+
+                btnMeasurementStop.ForeColor = System.Drawing.Color.Silver;
+            }
+            else
+            {
+                btnMeasurementStart.ForeColor = System.Drawing.Color.Silver;
+                btnSave.ForeColor = System.Drawing.Color.Silver;
+
+                btnMeasurementStop.ForeColor = System.Drawing.Color.White;
+            }
+        }
+
+        /// <summary>
+        /// 카드선택 Button Click Event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSelectCard_Click(object sender, EventArgs e)
+        {
+            frmSelectRCSCard frm = new frmSelectRCSCard(this);
+            //frm.TopMost = true;
+            frm.ShowDialog();
+        }
+
+        /// <summary>
+        /// DataGridView Cell Click
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void dgvMeasurement_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (((DataGridView)sender).RowCount < 1) return;
+
+            isCheck = false;
+            if (e.RowIndex >= 0 && e.ColumnIndex == 0)
+            {
+                ((DataGridView)sender).Rows[e.RowIndex].Cells["Select"].Value = !(bool)((DataGridView)sender).Rows[e.RowIndex].Cells["Select"].Value;
+                allCheck.Checked = true;
+
+                for (int i = 0; i < ((DataGridView)sender).Rows.Count; i++)
+                {
+                    if (!(bool)((DataGridView)sender).Rows[i].Cells["Select"].Value)
+                    {
+                        allCheck.Checked = false;
+                        break;
+                    }
+                }
+            }
+            isCheck = true;
+        }
+    }
+}

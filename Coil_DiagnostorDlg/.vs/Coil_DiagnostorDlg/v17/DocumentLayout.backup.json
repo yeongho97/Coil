@@ -1,0 +1,83 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|f:\\\uC18C\uC2A4\uCF54\uB4DC\\coildiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\coil_diagnostordlg\\coil_diagnostor\\frmaccessdbreader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmaccessdbreader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\coil_diagnostor\\function\\functiondatacontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\function\\functiondatacontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|f:\\\uC18C\uC2A4\uCF54\uB4DC\\coildiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\coil_diagnostordlg\\coil_diagnostor\\frmconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{96C5C2AB-2892-400F-82E1-12FE836BDC10}|Coil_Diagnostor\\Coil_Diagnostor.csproj|solutionrelative:coil_diagnostor\\frmconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "frmAccessDBReader.cs",
+              "DocumentMoniker": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmAccessDBReader.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmAccessDBReader.cs",
+              "ToolTip": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmAccessDBReader.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmAccessDBReader.cs",
+              "ViewState": "AgIAAFYEAAAAAAAAAAAowG4FAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-23T05:04:21.603Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "frmConfiguration.cs",
+              "DocumentMoniker": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmConfiguration.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\frmConfiguration.cs",
+              "ToolTip": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\frmConfiguration.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\frmConfiguration.cs",
+              "ViewState": "AgIAAMAFAAAAAAAAAAAswNYFAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-23T04:11:27.138Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "FunctionDataControl.cs",
+              "DocumentMoniker": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionDataControl.cs",
+              "RelativeDocumentMoniker": "Coil_Diagnostor\\Function\\FunctionDataControl.cs",
+              "ToolTip": "F:\\\uC18C\uC2A4\uCF54\uB4DC\\CoilDiagnose\\\uD55C\uBE5B1\uBC1C\uC804\uC18C\\Coil_DiagnostorDlg\\Coil_Diagnostor\\Function\\FunctionDataControl.cs",
+              "RelativeToolTip": "Coil_Diagnostor\\Function\\FunctionDataControl.cs",
+              "ViewState": "AgIAAPcQAAAAAAAAAAAYwAwRAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-04-11T03:05:57.829Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

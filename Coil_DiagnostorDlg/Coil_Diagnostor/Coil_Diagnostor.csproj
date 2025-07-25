@@ -1,0 +1,359 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{96C5C2AB-2892-400F-82E1-12FE836BDC10}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Coil_Diagnostor</RootNamespace>
+    <AssemblyName>Coil_Diagnostor</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Coil_Diagnostor\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>1403261324_Network.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="iptb">
+      <HintPath>Device\iptb.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>..\..\Coil_Diagnostor\Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
+    <Reference Include="Multimedia">
+      <HintPath>..\..\Coil_Diagnostor\Multimedia.dll</HintPath>
+    </Reference>
+    <Reference Include="NationalInstruments.Common, Version=19.1.40.49152, Culture=neutral, PublicKeyToken=dc6ad606294fc298, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Coil_Diagnostor\NationalInstruments.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NationalInstruments.DAQmx, Version=24.0.45.49417, Culture=neutral, PublicKeyToken=4febd62461bf11a4, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Coil_Diagnostor\NationalInstruments.DAQmx.dll</HintPath>
+    </Reference>
+    <Reference Include="NationalInstruments.NI4882, Version=13.0.45.161, Culture=neutral, PublicKeyToken=4febd62461bf11a4, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Coil_Diagnostor\NationalInstruments.NI4882.dll</HintPath>
+    </Reference>
+    <Reference Include="NationalInstruments.VisaNS, Version=13.0.45.167, Culture=neutral, PublicKeyToken=4febd62461bf11a4, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Coil_Diagnostor\NationalInstruments.VisaNS.dll</HintPath>
+    </Reference>
+    <Reference Include="Office, Version=12.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>..\..\Coil_Diagnostor\Office.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Coil_Diagnostor\System.Data.SqlServerCe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Device\ClassAnalogDAQ.cs" />
+    <Compile Include="Device\ClassDigitalDAQ.cs" />
+    <Compile Include="Device\ClassLCRMeter.cs" />
+    <Compile Include="frmAccessDBReader.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmAccessDBReader.designer.cs">
+      <DependentUpon>frmAccessDBReader.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmConfiguration.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmConfiguration.designer.cs">
+      <DependentUpon>frmConfiguration.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmDRPIDiagnosis.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmDRPIDiagnosis.Designer.cs">
+      <DependentUpon>frmDRPIDiagnosis.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmDRPIHistory.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmDRPIHistory.Designer.cs">
+      <DependentUpon>frmDRPIHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmDRPIReferenceValue.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmDRPIReferenceValue.Designer.cs">
+      <DependentUpon>frmDRPIReferenceValue.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmDRPIReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmDRPIReport.Designer.cs">
+      <DependentUpon>frmDRPIReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmFilePathSetting.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmFilePathSetting.Designer.cs">
+      <DependentUpon>frmFilePathSetting.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain.designer.cs">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMessageBox.designer.cs">
+      <DependentUpon>frmMessageBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmRCSDiagnosis.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmRCSDiagnosis.Designer.cs">
+      <DependentUpon>frmRCSDiagnosis.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmRCSHistory.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmRCSHistory.Designer.cs">
+      <DependentUpon>frmRCSHistory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmRCSReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmRCSReport.Designer.cs">
+      <DependentUpon>frmRCSReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmSelectDRPICard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmSelectDRPICard.Designer.cs">
+      <DependentUpon>frmSelectDRPICard.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmSelectRCSCard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmSelectRCSCard.Designer.cs">
+      <DependentUpon>frmSelectRCSCard.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmSelfTest.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmSelfTest.Designer.cs">
+      <DependentUpon>frmSelfTest.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmSetOffset.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmSetOffset.Designer.cs">
+      <DependentUpon>frmSetOffset.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmWorkMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmWorkMessageBox.designer.cs">
+      <DependentUpon>frmWorkMessageBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Function\FunctionChart.cs" />
+    <Compile Include="Function\FunctionDataControl.cs" />
+    <Compile Include="Function\FunctionDeviceInfo.cs" />
+    <Compile Include="Function\FunctionGlobalVariable.cs" />
+    <Compile Include="Function\FunctionIni.cs" />
+    <Compile Include="Function\FunctionMeasureProcess.cs" />
+    <Compile Include="Function\FunctionSyncTask.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="frmMainChanged.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMainChanged.designer.cs">
+      <DependentUpon>frmMainChanged.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
+    <Compile Include="UserControl\LedBulb.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UserControl\RCSRodCabinetPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <EmbeddedResource Include="frmAccessDBReader.resx">
+      <DependentUpon>frmAccessDBReader.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmConfiguration.resx">
+      <DependentUpon>frmConfiguration.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmDRPIDiagnosis.resx">
+      <DependentUpon>frmDRPIDiagnosis.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmDRPIHistory.resx">
+      <DependentUpon>frmDRPIHistory.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmDRPIReferenceValue.resx">
+      <DependentUpon>frmDRPIReferenceValue.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmDRPIReport.resx">
+      <DependentUpon>frmDRPIReport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmFilePathSetting.resx">
+      <DependentUpon>frmFilePathSetting.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmMain.resx">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmMessageBox.resx">
+      <DependentUpon>frmMessageBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmRCSDiagnosis.resx">
+      <DependentUpon>frmRCSDiagnosis.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmRCSHistory.resx">
+      <DependentUpon>frmRCSHistory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmRCSReport.resx">
+      <DependentUpon>frmRCSReport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmSelectDRPICard.resx">
+      <DependentUpon>frmSelectDRPICard.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmSelectRCSCard.resx">
+      <DependentUpon>frmSelectRCSCard.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmSelfTest.resx">
+      <DependentUpon>frmSelfTest.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmSetOffset.resx">
+      <DependentUpon>frmSetOffset.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmWorkMessageBox.resx">
+      <DependentUpon>frmWorkMessageBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="frmMainChanged.resx">
+      <DependentUpon>frmMainChanged.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Add-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Back-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Denided-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Folder-Add-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Play-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\버튼.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\버튼_마우스.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\종료_버튼.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Main_UI.png" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Resources\버튼_1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\버튼_2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\버튼_3.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\버튼_4.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1403261324_Network.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="1403261324_Network.ico" />
+    <None Include="Resources\한울발전소 Main.png" />
+    <None Include="Resources\WS_Main.png" />
+    <None Include="Resources\SU_Main.png" />
+    <None Include="Resources\KR_Main.png" />
+    <None Include="Resources\HU_Main.png" />
+    <None Include="Resources\HB_Main.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
